@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+nextjs-app/.next/
+nextjs-app/out/
+nextjs-app/next-env.d.ts
+
+# Sanity
+sanity-studio/.sanity/
+sanity-studio/dist/
+
+# Env
+.env
+.env.local
+.env*.local
+
+# System
+.DS_Store
+*.pem
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Misc
+test.txt
