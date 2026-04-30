@@ -28,5 +28,8 @@ pnpm-debug.log*
 # Vercel
 .vercel/
 
+# Claude
+.claude/
+
 # Misc
 test.txt
