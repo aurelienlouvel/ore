@@ -15,17 +15,22 @@ export const roleType = defineType({
     prepare({name, icon, color}: {name?: string; icon?: string; color?: string}) {
       const iconData = icon ? hugeIconMap[icon] : undefined
       const hex = color ? tailwindColorMap[color] : undefined
+      const MediaComp = iconData
+        ? () => createElement(HugeiconsIcon, {icon: iconData, size: 24, color: hex ?? 'currentColor'})
+        : hex
+          ? () =>
+              createElement('div', {
+                style: {
+                  width: '100%',
+                  height: '100%',
+                  background: hex,
+                  borderRadius: 4,
+                },
+              })
+          : undefined
       return {
         title: name ?? 'Untitled role',
-        subtitle: color,
-        media: iconData
-          ? () =>
-              createElement(HugeiconsIcon, {
-                icon: iconData,
-                size: 24,
-                color: hex ?? 'currentColor',
-              })
-          : undefined,
+        media: MediaComp,
       }
     },
   },

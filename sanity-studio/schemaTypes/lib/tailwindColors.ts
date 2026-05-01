@@ -1,28 +1,26 @@
 export type TailwindColor = {title: string; value: string; hex: string}
 
 export const tailwindColors: TailwindColor[] = [
-  {title: 'Slate', value: 'slate-100', hex: '#f1f5f9'},
-  {title: 'Gray', value: 'gray-100', hex: '#f3f4f6'},
-  {title: 'Zinc', value: 'zinc-100', hex: '#f4f4f5'},
-  {title: 'Neutral', value: 'neutral-100', hex: '#f5f5f5'},
-  {title: 'Stone', value: 'stone-100', hex: '#f5f5f4'},
-  {title: 'Red', value: 'red-100', hex: '#fee2e2'},
-  {title: 'Orange', value: 'orange-100', hex: '#ffedd5'},
-  {title: 'Amber', value: 'amber-100', hex: '#fef3c7'},
-  {title: 'Yellow', value: 'yellow-100', hex: '#fef9c3'},
-  {title: 'Lime', value: 'lime-100', hex: '#ecfccb'},
-  {title: 'Green', value: 'green-100', hex: '#dcfce7'},
-  {title: 'Emerald', value: 'emerald-100', hex: '#d1fae5'},
-  {title: 'Teal', value: 'teal-100', hex: '#ccfbf1'},
-  {title: 'Cyan', value: 'cyan-100', hex: '#cffafe'},
-  {title: 'Sky', value: 'sky-100', hex: '#e0f2fe'},
-  {title: 'Blue', value: 'blue-100', hex: '#dbeafe'},
-  {title: 'Indigo', value: 'indigo-100', hex: '#e0e7ff'},
-  {title: 'Violet', value: 'violet-100', hex: '#ede9fe'},
-  {title: 'Purple', value: 'purple-100', hex: '#f3e8ff'},
-  {title: 'Fuchsia', value: 'fuchsia-100', hex: '#fae8ff'},
-  {title: 'Pink', value: 'pink-100', hex: '#fce7f3'},
-  {title: 'Rose', value: 'rose-100', hex: '#ffe4e6'},
+  // Neutral
+  {title: 'Gray', value: 'gray-300', hex: '#d1d5db'},
+  // Chromatic
+  {title: 'Red', value: 'red-300', hex: '#fca5a5'},
+  {title: 'Orange', value: 'orange-300', hex: '#fdba74'},
+  {title: 'Amber', value: 'amber-300', hex: '#fcd34d'},
+  {title: 'Yellow', value: 'yellow-300', hex: '#fde047'},
+  {title: 'Lime', value: 'lime-300', hex: '#bef264'},
+  {title: 'Green', value: 'green-300', hex: '#86efac'},
+  {title: 'Emerald', value: 'emerald-300', hex: '#6ee7b7'},
+  {title: 'Teal', value: 'teal-300', hex: '#5eead4'},
+  {title: 'Cyan', value: 'cyan-300', hex: '#67e8f9'},
+  {title: 'Sky', value: 'sky-300', hex: '#7dd3fc'},
+  {title: 'Blue', value: 'blue-300', hex: '#93c5fd'},
+  {title: 'Indigo', value: 'indigo-300', hex: '#a5b4fc'},
+  {title: 'Violet', value: 'violet-300', hex: '#c4b5fd'},
+  {title: 'Purple', value: 'purple-300', hex: '#d8b4fe'},
+  {title: 'Fuchsia', value: 'fuchsia-300', hex: '#f0abfc'},
+  {title: 'Pink', value: 'pink-300', hex: '#f9a8d4'},
+  {title: 'Rose', value: 'rose-300', hex: '#fda4af'},
 ]
 
 export const tailwindColorMap: Record<string, string> = Object.fromEntries(

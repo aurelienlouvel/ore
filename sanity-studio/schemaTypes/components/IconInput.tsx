@@ -1,32 +1,46 @@
-import {useState} from 'react'
+import {useMemo, useState} from 'react'
 import {set, unset} from 'sanity'
 import type {StringInputProps} from 'sanity'
 import {HugeiconsIcon} from '@hugeicons/react'
-import {curatedIconList} from '../lib/hugeIcons'
+import type {IconSvgElement} from '@hugeicons/react'
+import * as AllIconsModule from '@hugeicons/core-free-icons'
 
-const categories = ['All', 'Work', 'Design', 'Dev', 'People', 'Media', 'Labels']
+type IconEntry = {name: string; label: string; icon: IconSvgElement}
+
+const allIcons: IconEntry[] = (
+  Object.entries(AllIconsModule) as [string, IconSvgElement][]
+)
+  .filter(([name]) => name.endsWith('Icon'))
+  .map(([name, icon]) => ({
+    name,
+    label: name.replace(/Icon$/, ''),
+    icon,
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label))
 
 export function IconInput(props: StringInputProps) {
   const {value, onChange} = props
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('All')
 
-  const filtered = curatedIconList.filter(({label, name, category: cat}) => {
-    const matchSearch =
-      label.toLowerCase().includes(search.toLowerCase()) ||
-      name.toLowerCase().includes(search.toLowerCase())
-    const matchCat = category === 'All' || cat === category
-    return matchSearch && matchCat
-  })
+  const filtered = useMemo(
+    () =>
+      search.trim().length > 0
+        ? allIcons.filter(({label}) => label.toLowerCase().includes(search.toLowerCase()))
+        : allIcons,
+    [search],
+  )
 
-  const selectedEntry = value ? curatedIconList.find((e) => e.name === value) : null
+  const selectedEntry = useMemo(
+    () => (value ? allIcons.find((e) => e.name === value) : null),
+    [value],
+  )
 
   return (
     <div>
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search icons…"
+        placeholder={`Search ${allIcons.length} icons…`}
         style={{
           width: '100%',
           padding: '6px 10px',
@@ -39,57 +53,39 @@ export function IconInput(props: StringInputProps) {
           boxSizing: 'border-box',
         }}
       />
-      <div style={{display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8}}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setCategory(cat)}
-            style={{
-              padding: '2px 8px',
-              borderRadius: 12,
-              fontSize: 11,
-              border: '1px solid var(--card-border-color, #e2e8f0)',
-              background: category === cat ? 'var(--card-fg-color, #0f172a)' : 'transparent',
-              color: category === cat ? 'var(--card-bg-color, #fff)' : 'var(--card-muted-fg-color, #64748b)',
-              cursor: 'pointer',
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
       <div
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 4,
-          maxHeight: 200,
+          maxHeight: 260,
           overflowY: 'auto',
-          padding: 2,
+          border: '1px solid var(--card-border-color, #e2e8f0)',
+          borderRadius: 6,
         }}
       >
         {filtered.map(({name, label, icon}) => (
           <button
             key={name}
             type="button"
-            title={label}
             onClick={() => onChange(value === name ? unset() : set(name))}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 6,
-              border: `1.5px solid ${value === name ? 'var(--card-focus-ring-color, #3b82f6)' : 'var(--card-border-color, #e2e8f0)'}`,
-              background: value === name ? 'var(--card-focus-ring-color, #3b82f6)' : 'transparent',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: value === name ? '#fff' : 'var(--card-fg-color, #0f172a)',
+              gap: 8,
+              width: '100%',
+              padding: '6px 10px',
+              border: 'none',
+              borderBottom: '1px solid var(--card-border-color, #e2e8f0)',
+              background:
+                name === value ? 'var(--card-focus-ring-color, #3b82f6)' : 'transparent',
+              color: name === value ? '#fff' : 'var(--card-fg-color, #0f172a)',
+              cursor: 'pointer',
+              textAlign: 'left',
               flexShrink: 0,
-            }}
+              contentVisibility: 'auto',
+              containIntrinsicHeight: '33px',
+            } as React.CSSProperties}
           >
-            <HugeiconsIcon icon={icon} size={18} color="currentColor" />
+            <HugeiconsIcon icon={icon} size={16} color="currentColor" />
+            <span style={{fontSize: 12, fontFamily: 'monospace'}}>{label}</span>
           </button>
         ))}
       </div>
