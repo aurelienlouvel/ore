@@ -12,7 +12,7 @@ export const personType = defineType({
     select: {
       firstName: 'firstName',
       lastName: 'lastName',
-      avatar: 'avatar',
+      media: 'avatar',
       roleName: 'role->name',
       roleIcon: 'role->icon',
       roleColor: 'role->color',
@@ -20,14 +20,14 @@ export const personType = defineType({
     prepare({
       firstName,
       lastName,
-      avatar,
+      media,
       roleName,
       roleIcon,
       roleColor,
     }: {
       firstName?: string
       lastName?: string
-      avatar?: unknown
+      media?: unknown
       roleName?: string
       roleIcon?: string
       roleColor?: string
@@ -35,8 +35,8 @@ export const personType = defineType({
       const iconData = roleIcon ? hugeIconMap[roleIcon] : undefined
       const hex = roleColor ? tailwindColorMap[roleColor] : undefined
 
-      const media = avatar
-        ? avatar
+      const resolvedMedia = media
+        ? media
         : iconData
           ? () =>
               createElement(
@@ -76,7 +76,7 @@ export const personType = defineType({
         title: [firstName, lastName].filter(Boolean).join(' ') || 'Untitled person',
         subtitle: roleName,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        media: media as any,
+        media: resolvedMedia as any,
       }
     },
   },
