@@ -1,8 +1,4 @@
-import {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
-import {HugeiconsIcon} from '@hugeicons/react'
-import {hugeIconMap} from './lib/hugeIcons'
-import {tailwindColorMap} from './lib/tailwindColors'
 
 export const personType = defineType({
   name: 'person',
@@ -14,69 +10,23 @@ export const personType = defineType({
       lastName: 'lastName',
       media: 'avatar',
       roleName: 'role->name',
-      roleIcon: 'role->icon',
-      roleColor: 'role->color',
     },
     prepare({
       firstName,
       lastName,
       media,
       roleName,
-      roleIcon,
-      roleColor,
     }: {
       firstName?: string
       lastName?: string
-      media?: unknown
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      media?: any
       roleName?: string
-      roleIcon?: string
-      roleColor?: string
     }) {
-      const iconData = roleIcon ? hugeIconMap[roleIcon] : undefined
-      const hex = roleColor ? tailwindColorMap[roleColor] : undefined
-
-      const resolvedMedia = media
-        ? media
-        : iconData
-          ? () =>
-              createElement(
-                'div',
-                {
-                  style: {
-                    position: 'relative',
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                },
-                createElement(HugeiconsIcon, {
-                  icon: iconData,
-                  size: 20,
-                  color: hex ?? 'currentColor',
-                }),
-                hex
-                  ? createElement('div', {
-                      style: {
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 4,
-                        background: hex,
-                        borderRadius: '0 0 2px 2px',
-                      },
-                    })
-                  : null,
-              )
-          : undefined
-
       return {
         title: [firstName, lastName].filter(Boolean).join(' ') || 'Untitled person',
         subtitle: roleName,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        media: resolvedMedia as any,
+        media,
       }
     },
   },

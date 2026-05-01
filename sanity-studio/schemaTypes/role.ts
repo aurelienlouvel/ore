@@ -4,7 +4,7 @@ import {HugeiconsIcon} from '@hugeicons/react'
 import {ColorInput} from './components/ColorInput'
 import {IconInput} from './components/IconInput'
 import {hugeIconMap} from './lib/hugeIcons'
-import {tailwindColorMap} from './lib/tailwindColors'
+import {getColorShade} from './lib/tailwindColors'
 
 export const roleType = defineType({
   name: 'role',
@@ -14,45 +14,29 @@ export const roleType = defineType({
     select: {name: 'name', icon: 'icon', color: 'color'},
     prepare({name, icon, color}: {name?: string; icon?: string; color?: string}) {
       const iconData = icon ? hugeIconMap[icon] : undefined
-      const hex = color ? tailwindColorMap[color] : undefined
+      const bg = color ? getColorShade(color, 200) : undefined
+      const iconColor = color ? getColorShade(color, 800) : undefined
       const MediaComp = iconData
         ? () =>
             createElement(
               'div',
               {
                 style: {
-                  position: 'relative',
                   width: '100%',
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  background: bg ?? 'transparent',
+                  borderRadius: 2,
                 },
               },
-              createElement(HugeiconsIcon, {icon: iconData, size: 20, color: hex ?? 'currentColor'}),
-              hex
-                ? createElement('div', {
-                    style: {
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: hex,
-                      borderRadius: '0 0 2px 2px',
-                    },
-                  })
-                : null,
+              createElement(HugeiconsIcon, {icon: iconData, size: 20, color: iconColor ?? 'currentColor'}),
             )
-        : hex
+        : bg
           ? () =>
               createElement('div', {
-                style: {
-                  width: '100%',
-                  height: '100%',
-                  background: hex,
-                  borderRadius: 4,
-                },
+                style: {width: '100%', height: '100%', background: bg, borderRadius: 4},
               })
           : undefined
       return {
