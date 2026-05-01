@@ -9,10 +9,13 @@ export const personType = defineType({
       firstName: 'firstName',
       lastName: 'lastName',
       media: 'avatar',
+      roleName: 'role->name',
     },
-    prepare({firstName, lastName, media}) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prepare({firstName, lastName, media, roleName}: {firstName?: string; lastName?: string; media?: any; roleName?: string}) {
       return {
-        title: [firstName, lastName].filter(Boolean).join(' '),
+        title: [firstName, lastName].filter(Boolean).join(' ') || 'Untitled person',
+        subtitle: roleName,
         media,
       }
     },

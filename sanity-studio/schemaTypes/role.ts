@@ -1,11 +1,33 @@
+import {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {ColorInput} from './components/ColorInput'
+import {IconInput} from './components/IconInput'
+import {hugeIconMap} from './lib/hugeIcons'
+import {tailwindColorMap} from './lib/tailwindColors'
 
 export const roleType = defineType({
   name: 'role',
   title: 'Role',
   type: 'document',
   preview: {
-    select: {title: 'name', subtitle: 'color'},
+    select: {name: 'name', icon: 'icon', color: 'color'},
+    prepare({name, icon, color}: {name?: string; icon?: string; color?: string}) {
+      const iconData = icon ? hugeIconMap[icon] : undefined
+      const hex = color ? tailwindColorMap[color] : undefined
+      return {
+        title: name ?? 'Untitled role',
+        subtitle: color,
+        media: iconData
+          ? () =>
+              createElement(HugeiconsIcon, {
+                icon: iconData,
+                size: 24,
+                color: hex ?? 'currentColor',
+              })
+          : undefined,
+      }
+    },
   },
   fields: [
     defineField({
@@ -18,18 +40,13 @@ export const roleType = defineType({
       name: 'icon',
       title: 'Icon',
       type: 'string',
-      description: 'Emoji or icon name',
+      components: {input: IconInput},
     }),
     defineField({
       name: 'color',
       title: 'Color',
       type: 'string',
-      description: 'Hex color (e.g. #FF5733)',
-      validation: (Rule) =>
-        Rule.regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, {
-          name: 'hex color',
-          invert: false,
-        }).warning('Should be a valid hex color'),
+      components: {input: ColorInput},
     }),
   ],
 })
