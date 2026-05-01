@@ -14,7 +14,7 @@ export const tagType = defineType({
     select: {name: 'name', icon: 'icon', color: 'color'},
     prepare({name, icon, color}: {name?: string; icon?: string; color?: string}) {
       const iconData = icon ? hugeIconMap[icon] : undefined
-      const bg = color ? getColorShade(color, 200) : undefined
+      const bg = color ? getColorShade(color, 100) : undefined
       const iconColor = color ? getColorShade(color, 800) : undefined
       const MediaComp = iconData
         ? () =>
