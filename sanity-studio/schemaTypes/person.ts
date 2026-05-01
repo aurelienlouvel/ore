@@ -1,4 +1,8 @@
+import {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {hugeIconMap} from './lib/hugeIcons'
+import {tailwindColorMap} from './lib/tailwindColors'
 
 export const personType = defineType({
   name: 'person',
@@ -8,15 +12,71 @@ export const personType = defineType({
     select: {
       firstName: 'firstName',
       lastName: 'lastName',
-      media: 'avatar',
+      avatar: 'avatar',
       roleName: 'role->name',
+      roleIcon: 'role->icon',
+      roleColor: 'role->color',
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prepare({firstName, lastName, media, roleName}: {firstName?: string; lastName?: string; media?: any; roleName?: string}) {
+    prepare({
+      firstName,
+      lastName,
+      avatar,
+      roleName,
+      roleIcon,
+      roleColor,
+    }: {
+      firstName?: string
+      lastName?: string
+      avatar?: unknown
+      roleName?: string
+      roleIcon?: string
+      roleColor?: string
+    }) {
+      const iconData = roleIcon ? hugeIconMap[roleIcon] : undefined
+      const hex = roleColor ? tailwindColorMap[roleColor] : undefined
+
+      const media = avatar
+        ? avatar
+        : iconData
+          ? () =>
+              createElement(
+                'div',
+                {
+                  style: {
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                },
+                createElement(HugeiconsIcon, {
+                  icon: iconData,
+                  size: 20,
+                  color: hex ?? 'currentColor',
+                }),
+                hex
+                  ? createElement('div', {
+                      style: {
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        background: hex,
+                        borderRadius: '0 0 2px 2px',
+                      },
+                    })
+                  : null,
+              )
+          : undefined
+
       return {
         title: [firstName, lastName].filter(Boolean).join(' ') || 'Untitled person',
         subtitle: roleName,
-        media,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        media: media as any,
       }
     },
   },
