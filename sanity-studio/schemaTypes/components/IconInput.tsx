@@ -2,21 +2,8 @@ import {useEffect, useMemo, useRef, useState} from 'react'
 import {set, unset} from 'sanity'
 import type {StringInputProps} from 'sanity'
 import {HugeiconsIcon} from '@hugeicons/react'
-import type {IconSvgElement} from '@hugeicons/react'
-import * as AllIconsModule from '@hugeicons/core-free-icons'
-
-type IconEntry = {name: string; label: string; icon: IconSvgElement}
-
-const allIcons: IconEntry[] = (
-  Object.entries(AllIconsModule) as [string, IconSvgElement][]
-)
-  .filter(([name]) => name.endsWith('Icon'))
-  .map(([name, icon]) => ({
-    name,
-    label: name.replace(/Icon$/, ''),
-    icon,
-  }))
-  .sort((a, b) => a.label.localeCompare(b.label))
+import {Search01Icon} from '@hugeicons/core-free-icons'
+import {allIconEntries} from '../lib/hugeIcons'
 
 export function IconInput(props: StringInputProps) {
   const {value, onChange} = props
@@ -28,17 +15,16 @@ export function IconInput(props: StringInputProps) {
   const filtered = useMemo(
     () =>
       search.trim().length > 0
-        ? allIcons.filter(({label}) => label.toLowerCase().includes(search.toLowerCase()))
-        : allIcons,
+        ? allIconEntries.filter(({label}) => label.toLowerCase().includes(search.toLowerCase()))
+        : allIconEntries,
     [search],
   )
 
   const selectedEntry = useMemo(
-    () => (value ? allIcons.find((e) => e.name === value) : null),
+    () => (value ? allIconEntries.find((e) => e.name === value) : null),
     [value],
   )
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: MouseEvent) => {
@@ -50,7 +36,6 @@ export function IconInput(props: StringInputProps) {
     return () => document.removeEventListener('mousedown', handler)
   }, [isOpen])
 
-  // Focus search when opening
   useEffect(() => {
     if (isOpen) {
       setSearch('')
@@ -65,7 +50,6 @@ export function IconInput(props: StringInputProps) {
 
   return (
     <div ref={containerRef} style={{position: 'relative'}}>
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
@@ -78,7 +62,9 @@ export function IconInput(props: StringInputProps) {
           borderRadius: 6,
           border: `1px solid ${isOpen ? 'var(--card-focus-ring-color, #3b82f6)' : 'var(--card-border-color, #e2e8f0)'}`,
           background: 'var(--card-bg-color, #fff)',
-          color: selectedEntry ? 'var(--card-fg-color, #0f172a)' : 'var(--card-muted-fg-color, #94a3b8)',
+          color: selectedEntry
+            ? 'var(--card-fg-color, #0f172a)'
+            : 'var(--card-muted-fg-color, #94a3b8)',
           cursor: 'pointer',
           fontSize: 13,
           textAlign: 'left',
@@ -95,7 +81,6 @@ export function IconInput(props: StringInputProps) {
         <span style={{fontSize: 10, opacity: 0.5}}>{isOpen ? '▲' : '▼'}</span>
       </button>
 
-      {/* Dropdown */}
       {isOpen && (
         <div
           style={{
@@ -110,15 +95,35 @@ export function IconInput(props: StringInputProps) {
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
           }}
         >
-          <div style={{padding: 6, borderBottom: '1px solid var(--card-border-color, #e2e8f0)'}}>
+          <div
+            style={{
+              padding: 6,
+              borderBottom: '1px solid var(--card-border-color, #e2e8f0)',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 14,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: 'var(--card-muted-fg-color, #94a3b8)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <HugeiconsIcon icon={Search01Icon} size={14} color="currentColor" />
+            </div>
             <input
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${allIcons.length} icons…`}
+              placeholder="Search icons…"
               style={{
                 width: '100%',
-                padding: '5px 8px',
+                padding: '5px 8px 5px 28px',
                 borderRadius: 4,
                 border: '1px solid var(--card-border-color, #e2e8f0)',
                 fontSize: 12,
@@ -143,7 +148,8 @@ export function IconInput(props: StringInputProps) {
                   padding: '6px 10px',
                   border: 'none',
                   borderBottom: '1px solid var(--card-border-color, #e2e8f0)',
-                  background: name === value ? 'var(--card-focus-ring-color, #3b82f6)' : 'transparent',
+                  background:
+                    name === value ? 'var(--card-focus-ring-color, #3b82f6)' : 'transparent',
                   color: name === value ? '#fff' : 'var(--card-fg-color, #0f172a)',
                   cursor: 'pointer',
                   textAlign: 'left',
