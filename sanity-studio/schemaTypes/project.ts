@@ -5,7 +5,11 @@ export const projectType = defineType({
   title: 'Project',
   type: 'document',
   preview: {
-    select: {title: 'title', subtitle: 'description'},
+    select: {
+      title: 'title',
+      subtitle: 'description',
+      media: 'thumbnail',
+    },
   },
   fields: [
     defineField({
@@ -68,17 +72,15 @@ export const projectType = defineType({
       title: 'Contributors',
       type: 'array',
       of: [{type: 'reference', to: [{type: 'person'}]}],
-      description: 'Leave empty for solo projects',
     }),
     defineField({
       name: 'redirectUrl',
-      title: 'Redirect URL',
+      title: 'Link',
       type: 'url',
-      description: 'Optional — redirects to an external URL instead of the project page',
     }),
     defineField({
       name: 'sections',
-      title: 'Sections',
+      title: 'Content',
       type: 'array',
       of: [
         {type: 'sectionText'},
