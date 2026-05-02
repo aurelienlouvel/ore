@@ -20,10 +20,6 @@ export const organisationType = defineType({
       type: 'image',
       options: {hotspot: true},
     }),
-    defineField({
-      name: 'websiteUrl',
-      title: 'Website URL',
-      type: 'url',
-    }),
+
   ],
 })
