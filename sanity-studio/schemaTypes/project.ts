@@ -22,6 +22,12 @@ export const projectType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'thumbnail',
+      title: 'Thumbnail',
+      type: 'file',
+      options: {accept: 'image/*,video/*'},
+    }),
+    defineField({
       name: 'description',
       title: 'Description',
       type: 'text',
@@ -63,40 +69,6 @@ export const projectType = defineType({
       type: 'array',
       of: [{type: 'reference', to: [{type: 'person'}]}],
       description: 'Leave empty for solo projects',
-    }),
-    defineField({
-      name: 'thumbnail',
-      title: 'Thumbnail',
-      type: 'object',
-      fields: [
-        defineField({
-          name: 'mediaType',
-          title: 'Type',
-          type: 'string',
-          initialValue: 'image',
-          options: {
-            list: [
-              {title: 'Image', value: 'image'},
-              {title: 'Video', value: 'video'},
-            ],
-            layout: 'radio',
-          },
-        }),
-        defineField({
-          name: 'image',
-          title: 'Image',
-          type: 'image',
-          options: {hotspot: true},
-          hidden: ({parent}) => (parent as {mediaType?: string})?.mediaType !== 'image',
-        }),
-        defineField({
-          name: 'video',
-          title: 'Video',
-          type: 'file',
-          options: {accept: 'video/*'},
-          hidden: ({parent}) => (parent as {mediaType?: string})?.mediaType !== 'video',
-        }),
-      ],
     }),
     defineField({
       name: 'redirectUrl',
