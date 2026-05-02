@@ -45,7 +45,7 @@ export const personType = defineType({
     }),
     defineField({
       name: 'linkedinUrl',
-      title: 'LinkedIn URL',
+      title: 'LinkedIn',
       type: 'url',
     }),
   ],

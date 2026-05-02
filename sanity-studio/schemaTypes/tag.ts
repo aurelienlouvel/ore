@@ -1,4 +1,4 @@
-import {createElement} from 'react'
+import React, {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
 import {HugeiconsIcon} from '@hugeicons/react'
 import {ColorInput} from './components/ColorInput'
@@ -29,7 +29,9 @@ export const tagType = defineType({
                   justifyContent: 'center',
                   background: bg ?? 'transparent',
                   borderRadius: 2,
-                },
+                  color: iconColor,
+                  '--card-icon-color': iconColor,
+                } as React.CSSProperties,
               },
               createElement(HugeiconsIcon, {icon: iconData, size: 20, color: iconColor ?? 'currentColor'}),
             )

@@ -21,8 +21,14 @@ export const organisationType = defineType({
       options: {hotspot: true},
     }),
     defineField({
+      name: 'description',
+      title: 'Description',
+      type: 'text',
+      rows: 3,
+    }),
+    defineField({
       name: 'websiteUrl',
-      title: 'Website URL',
+      title: 'Website',
       type: 'url',
     }),
   ],
