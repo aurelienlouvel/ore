@@ -1,3 +1,4 @@
+import {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
 
 export const projectType = defineType({
@@ -8,7 +9,22 @@ export const projectType = defineType({
     select: {
       title: 'title',
       subtitle: 'description',
-      media: 'thumbnail',
+      thumbnail: 'thumbnail',
+    },
+    prepare({title, subtitle, thumbnail}: {title?: string; subtitle?: string; thumbnail?: {asset?: {_ref?: string}}}) {
+      const ref = thumbnail?.asset?._ref
+      const match = ref?.match(/^file-([a-f0-9]+)-(\w+)$/)
+      const imgExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif'])
+      const media =
+        match && imgExts.has(match[2])
+          ? () =>
+              createElement('img', {
+                src: `https://cdn.sanity.io/files/87awwrcu/production/${match[1]}.${match[2]}`,
+                style: {width: '100%', height: '100%', objectFit: 'cover'},
+              })
+          : undefined
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return {title: title ?? 'Untitled project', subtitle, media: media as any}
     },
   },
   fields: [
