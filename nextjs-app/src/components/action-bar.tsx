@@ -17,6 +17,10 @@ const NAV_LINKS = [
   { href: "/info", label: "info" },
 ] as const;
 
+const sep = (
+  <span className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+);
+
 export function ActionBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -24,25 +28,19 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-      <div
-        className={cn(
-          "flex items-center gap-3 rounded-full border border-border/60",
-          "bg-background/80 px-4 py-2 shadow-lg backdrop-blur-md",
-          "text-sm"
-        )}
-      >
+      <div className="flex h-[52px] items-center gap-1 rounded-2xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
         {mode === "nav" ? (
           <>
             <Link
               href="/work"
-              className="font-semibold tracking-tight text-foreground"
+              className="flex h-9 items-center px-3 text-base font-semibold text-zinc-950"
             >
               oré ˖ ⊹
             </Link>
 
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
+            {sep}
 
-            <nav className="flex items-center gap-3" aria-label="Main">
+            <nav className="flex items-center" aria-label="Main">
               {NAV_LINKS.map(({ href, label }) => {
                 const isActive = pathname.startsWith(href);
                 return (
@@ -50,10 +48,10 @@ export function ActionBar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "transition-colors hover:text-foreground",
+                      "flex h-9 items-center rounded-2xl px-3 text-base transition-colors",
                       isActive
-                        ? "font-semibold text-foreground"
-                        : "font-normal text-muted-foreground"
+                        ? "bg-zinc-50 text-zinc-950"
+                        : "text-zinc-600 hover:text-zinc-950"
                     )}
                   >
                     {label}
@@ -62,13 +60,13 @@ export function ActionBar() {
               })}
             </nav>
 
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
+            {sep}
 
             <a
               href="mailto:louvel.aurelien.pro@gmail.com"
-              className="flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-200"
+              className="flex h-9 items-center gap-1.5 rounded-2xl bg-sky-100 px-3 text-base font-medium text-sky-700 transition-colors hover:bg-sky-200"
             >
-              <HugeiconsIcon icon={SendHorizontal} size={11} />
+              <HugeiconsIcon icon={SendHorizontal} size={14} />
               contact
             </a>
           </>
@@ -76,28 +74,28 @@ export function ActionBar() {
           <>
             <button
               onClick={() => router.back()}
-              className="flex items-center text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-9 items-center px-3 text-zinc-600 transition-colors hover:text-zinc-950"
               aria-label="Go back"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={14} />
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
             </button>
 
-            <span className="h-4 w-px bg-border" aria-hidden="true" />
+            {sep}
 
-            <span className="max-w-[240px] truncate font-medium text-foreground">
+            <span className="flex h-9 max-w-[240px] items-center truncate px-3 text-base font-medium text-zinc-950">
               {projectData?.title}
             </span>
 
             {projectData?.redirectUrl && (
               <>
-                <span className="h-4 w-px bg-border" aria-hidden="true" />
+                {sep}
                 <a
                   href={projectData.redirectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-200"
+                  className="flex h-9 items-center gap-1.5 rounded-2xl bg-sky-100 px-3 text-base font-medium text-sky-700 transition-colors hover:bg-sky-200"
                 >
-                  <HugeiconsIcon icon={PlayIcon} size={11} />
+                  <HugeiconsIcon icon={PlayIcon} size={14} />
                   launch
                 </a>
               </>
