@@ -17,9 +17,7 @@ const NAV_LINKS = [
   { href: "/info", label: "info" },
 ] as const;
 
-const sep = (
-  <span className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-);
+const sep = <span className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />;
 
 export function ActionBar() {
   const pathname = usePathname();
@@ -28,7 +26,7 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-      <div className="flex h-[52px] items-center gap-1 rounded-2xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
+      <div className="flex h-13 items-center gap-1 rounded-2xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
         {mode === "nav" ? (
           <>
             <Link
@@ -48,10 +46,10 @@ export function ActionBar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex h-9 items-center rounded-2xl px-3 text-base transition-colors",
+                      "flex h-9 items-center rounded-md px-3 text-base transition-colors",
                       isActive
                         ? "bg-zinc-50 text-zinc-950"
-                        : "text-zinc-600 hover:text-zinc-950"
+                        : "text-zinc-600 hover:text-zinc-950",
                     )}
                   >
                     {label}
@@ -82,7 +80,7 @@ export function ActionBar() {
 
             {sep}
 
-            <span className="flex h-9 max-w-[240px] items-center truncate px-3 text-base font-medium text-zinc-950">
+            <span className="flex h-9 items-center truncate px-3 text-base font-medium text-zinc-950">
               {projectData?.title}
             </span>
 

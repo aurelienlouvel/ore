@@ -6,7 +6,8 @@ export const projectsListQuery = defineQuery(`
     title,
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
-    "tags": tags[]->{ _id, name, color, icon }
+    "tags": tags[]->{ _id, name, color, icon },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url }
   }
 `);
 
@@ -21,6 +22,7 @@ export type ProjectListItem = {
     color: string | null;
     icon: string | null;
   }> | null;
+  organisation: { name: string; logoUrl: string | null } | null;
 };
 
 export const projectDetailQuery = defineQuery(`

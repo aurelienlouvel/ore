@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import type { ProjectListItem } from "@/sanity/queries";
 
@@ -14,43 +13,43 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link
       href={`/work/${project.slug}`}
-      className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted"
+      className="group block transition-transform duration-300 hover:scale-[0.97]"
     >
-      {mediaUrl && isVideo ? (
-        <video
-          src={mediaUrl}
-          className="h-full w-full object-cover"
-          muted
-          loop
-          playsInline
-          autoPlay
-        />
-      ) : mediaUrl ? (
-        <Image
-          src={mediaUrl}
-          alt={project.title}
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      ) : (
-        <div className="h-full w-full bg-muted" />
-      )}
+      <div className="relative overflow-hidden rounded-xl bg-muted">
+        {mediaUrl && isVideo ? (
+          <video
+            src={mediaUrl}
+            className="block h-auto w-full"
+            muted
+            loop
+            playsInline
+            autoPlay
+          />
+        ) : mediaUrl ? (
+          <img
+            src={mediaUrl}
+            alt={project.title}
+            className="block h-auto w-full"
+          />
+        ) : (
+          <div className="aspect-[4/3] bg-muted" />
+        )}
 
-      <div className="absolute inset-x-0 bottom-0 translate-y-full transition-transform duration-300 group-hover:translate-y-0">
-        <div className="flex flex-col gap-2 bg-gradient-to-t from-black/80 to-transparent p-4 pt-8">
-          <h2 className="text-sm font-semibold text-white">{project.title}</h2>
-          {project.tags && project.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {project.tags.map((tag) => (
-                <span
-                  key={tag._id}
-                  className="rounded-full bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm"
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 overflow-hidden p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-100 bg-white px-[10px] py-2 text-sm text-zinc-800">
+            {project.title}
+          </span>
+          {project.organisation && (
+            <span className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-lg border border-zinc-100 bg-white px-[10px] py-2 text-sm text-zinc-800">
+              {project.organisation.logoUrl && (
+                <img
+                  src={project.organisation.logoUrl}
+                  alt=""
+                  className="h-3.5 w-3.5 shrink-0 rounded-[3px] object-contain"
+                />
+              )}
+              <span className="truncate">{project.organisation.name}</span>
+            </span>
           )}
         </div>
       </div>

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import localFont from "next/font/local";
 import { Suspense } from "react";
 import "./globals.css";
 import { ActionBarProvider } from "@/contexts/action-bar-context";
 import { ActionBar } from "@/components/action-bar";
 
-const geist = Geist({
+const neueMontreal = localFont({
+  src: "./fonts/PPNeueMontreal-Variable.ttf",
   variable: "--font-sans",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geist.variable} antialiased`}>
+    <html lang="en" className={`${neueMontreal.variable} antialiased`}>
       <body className="min-h-dvh bg-background text-foreground">
         <ActionBarProvider>
           {children}
