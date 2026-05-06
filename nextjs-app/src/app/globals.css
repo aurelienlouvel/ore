@@ -123,8 +123,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-weight: 500;
+    letter-spacing: -0.024em;
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.032em;
   }
 }

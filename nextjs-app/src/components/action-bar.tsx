@@ -48,7 +48,7 @@ export function ActionBar() {
                     className={cn(
                       "flex h-9 items-center rounded-md px-3 text-base transition-colors",
                       isActive
-                        ? "bg-zinc-50 text-zinc-950"
+                        ? "bg-zinc-50 font-semibold text-zinc-950"
                         : "text-zinc-600 hover:text-zinc-950",
                     )}
                   >
