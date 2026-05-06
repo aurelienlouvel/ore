@@ -1,3 +1,6 @@
+"use client";
+
+import { useRef, useEffect } from "react";
 import Link from "next/link";
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import type { ProjectListItem } from "@/sanity/queries";
@@ -9,6 +12,24 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   const mediaUrl = fileRefToUrl(project.thumbnailRef);
   const isVideo = isVideoRef(project.thumbnailRef);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return;
+    const video = videoRef.current;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    obs.observe(video);
+    return () => obs.disconnect();
+  }, [isVideo]);
 
   return (
     <Link
@@ -18,6 +39,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="relative overflow-hidden rounded-xl bg-muted">
         {mediaUrl && isVideo ? (
           <video
+            ref={videoRef}
             src={mediaUrl}
             className="block h-auto w-full"
             muted
