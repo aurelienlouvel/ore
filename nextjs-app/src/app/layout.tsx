@@ -12,7 +12,7 @@ const neueMontreal = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "oré",
+  title: "oré ˖ ࣪⊹ product designer · paris, fr",
   description: "Portfolio",
 };
 
