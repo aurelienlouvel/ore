@@ -26,7 +26,7 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-12 left-1/2 z-50 w-max -translate-x-1/2 max-w-[calc(100vw-48px)]">
-      <div className="flex h-[60px] items-center rounded-2xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
+      <div className="flex h-[62px] items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
         {mode === "nav" ? (
           <>
             <Link
@@ -46,7 +46,7 @@ export function ActionBar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex h-11 items-center rounded-lg px-3 text-lg transition-colors",
+                      "flex h-11 items-center rounded-xl px-3 text-lg transition-colors",
                       isActive
                         ? "bg-zinc-50 font-semibold text-zinc-950"
                         : "text-zinc-600 hover:text-zinc-950",
@@ -62,7 +62,7 @@ export function ActionBar() {
 
             <a
               href="mailto:louvel.aurelien.pro@gmail.com"
-              className="flex h-11 items-center gap-1.5 rounded-lg bg-sky-100 px-3 text-lg font-medium text-sky-700 transition-colors hover:bg-sky-200"
+              className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-lg font-medium text-sky-700 transition-colors hover:bg-sky-200"
             >
               <HugeiconsIcon icon={SentIcon} size={15} />
               contact
@@ -91,7 +91,7 @@ export function ActionBar() {
                   href={projectData.redirectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-11 items-center gap-1.5 rounded-lg bg-sky-100 px-3 text-lg font-medium text-sky-700 transition-colors hover:bg-sky-200"
+                  className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-lg font-medium text-sky-700 transition-colors hover:bg-sky-200"
                 >
                   <HugeiconsIcon icon={PlayIcon} size={15} />
                   launch
