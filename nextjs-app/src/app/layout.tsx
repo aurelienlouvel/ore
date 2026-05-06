@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { ActionBarProvider } from "@/contexts/action-bar-context";
 import { ActionBar } from "@/components/action-bar";
+import { ScrollInit } from "@/components/scroll-init";
 
 const neueMontreal = localFont({
   src: "./fonts/PPNeueMontreal-Variable.ttf",
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${neueMontreal.variable} antialiased`}>
       <body className="min-h-dvh bg-background text-foreground">
+        <ScrollInit />
         <ActionBarProvider>
           {children}
           <Suspense fallback={null}>
