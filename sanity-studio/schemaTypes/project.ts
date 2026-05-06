@@ -1,5 +1,6 @@
 import {createElement} from 'react'
 import {defineField, defineType} from 'sanity'
+import {orderRankField} from 'sanity-plugin-orderable-document-list'
 
 export const projectType = defineType({
   name: 'project',
@@ -28,6 +29,7 @@ export const projectType = defineType({
     },
   },
   fields: [
+    orderRankField({type: 'project'}),
     defineField({
       name: 'title',
       title: 'Title',

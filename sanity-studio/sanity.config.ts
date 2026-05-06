@@ -1,6 +1,7 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
+import {orderableDocumentListDeskItem} from 'sanity-plugin-orderable-document-list'
 import {schemaTypes} from './schemaTypes'
 import {
   ProjectNavIcon,
@@ -19,11 +20,17 @@ export default defineConfig({
 
   plugins: [
     structureTool({
-      structure: (S) =>
+      structure: (S, context) =>
         S.list()
           .title('Content')
           .items([
-            S.documentTypeListItem('project').title('Project').icon(ProjectNavIcon),
+            orderableDocumentListDeskItem({
+              type: 'project',
+              title: 'Project',
+              icon: ProjectNavIcon,
+              S,
+              context,
+            }),
             S.documentTypeListItem('tag').title('Tag').icon(TagNavIcon),
             S.documentTypeListItem('organisation').title('Organisation').icon(OrganisationNavIcon),
             S.documentTypeListItem('person').title('Person').icon(PersonNavIcon),

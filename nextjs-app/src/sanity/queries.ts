@@ -1,7 +1,7 @@
 import { defineQuery } from "next-sanity";
 
 export const projectsListQuery = defineQuery(`
-  *[_type == "project"] | order(startDate desc) {
+  *[_type == "project"] | order(orderRank) {
     _id,
     title,
     "slug": slug.current,
