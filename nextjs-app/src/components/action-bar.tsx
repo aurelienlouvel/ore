@@ -8,6 +8,7 @@ import {
   ArrowLeft01Icon,
   PlayIcon,
 } from "@hugeicons/core-free-icons";
+import { motion } from "motion/react";
 import { useActionBar } from "@/contexts/action-bar-context";
 import { cn } from "@/lib/utils";
 
@@ -60,13 +61,15 @@ export function ActionBar() {
 
             {sep}
 
-            <a
+            <motion.a
               href="mailto:louvel.aurelien.pro@gmail.com"
-              className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-lg font-medium text-sky-700 transition-colors hover:bg-sky-200"
+              className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-lg font-medium text-sky-700 hover:bg-sky-200"
+              whileHover={{ scale: 0.93, rotate: -4 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
               <HugeiconsIcon icon={SentIcon} size={15} />
               contact
-            </a>
+            </motion.a>
           </>
         ) : (
           <>
