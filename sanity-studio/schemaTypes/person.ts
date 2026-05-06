@@ -38,10 +38,10 @@ export const personType = defineType({
       options: {hotspot: true},
     }),
     defineField({
-      name: 'role',
-      title: 'Role',
-      type: 'reference',
-      to: [{type: 'role'}],
+      name: 'roles',
+      title: 'Roles',
+      type: 'array',
+      of: [{type: 'reference', to: [{type: 'role'}]}],
     }),
     defineField({
       name: 'linkedinUrl',
