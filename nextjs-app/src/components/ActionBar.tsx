@@ -19,7 +19,9 @@ const NAV_LINKS = [
   { href: "/info", label: "info" },
 ] as const;
 
-const sep = <span className="mx-3 h-5 w-px shrink-0 bg-border" aria-hidden="true" />;
+const sep = (
+  <span className="mx-3 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
+);
 
 const TOAST_COLORS = [
   { bg: "bg-sky-50", text: "text-sky-500" },
@@ -31,7 +33,11 @@ const TOAST_COLORS = [
   { bg: "bg-indigo-50", text: "text-indigo-500" },
 ] as const;
 
-type ToastState = { id: number; color: (typeof TOAST_COLORS)[number]; rotate: number };
+type ToastState = {
+  id: number;
+  color: (typeof TOAST_COLORS)[number];
+  rotate: number;
+};
 
 export function ActionBar() {
   const pathname = usePathname();
@@ -53,7 +59,7 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-12 left-1/2 z-50 w-max -translate-x-1/2 max-w-[calc(100vw-48px)]">
-      <div className="flex h-[62px] items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
+      <div className="flex h-16 items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
         {mode === "nav" ? (
           <>
             <Link
@@ -121,7 +127,7 @@ export function ActionBar() {
                 whileTap={{ scale: 0.87, rotate: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <span className="text-sky-300">
+                <span className="text-sky-500">
                   <HugeiconsIcon icon={MessageMultiple02Icon} size={15} />
                 </span>
                 let&apos;s chat
