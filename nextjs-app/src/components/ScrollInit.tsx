@@ -15,7 +15,6 @@ export function ScrollInit() {
         orientation: "vertical",
         gestureOrientation: "vertical",
         smoothWheel: true,
-        smoothTouch: false,
         wheelMultiplier: 1,
         touchMultiplier: 2,
         normalizeWheel: true,
