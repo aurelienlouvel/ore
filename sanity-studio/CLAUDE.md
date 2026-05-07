@@ -21,7 +21,7 @@ pnpm sanity deploy --url ore -y   # → ore.sanity.studio
 ## Conventions
 
 - Les thumbnails sont de type `file` (pas `image`) — CDN : `cdn.sanity.io/files/87awwrcu/production/`
-- Couleurs tags/roles : stocker la valeur Tailwind (`red-300`), utiliser `getColorShade()` pour obtenir les hex `-100`/`-500`/`-800`
+- Couleurs tags/roles : stocker le nom de couleur Tailwind (`red`, `yellow`, etc.)
 - Icons : stocker le nom de l'export HugeIcon (ex: `"Folder02Icon"`)
 - Avant de modifier le schéma, vérifier la compatibilité avec les données existantes
 

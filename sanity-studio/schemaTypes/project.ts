@@ -50,12 +50,6 @@ export const projectType = defineType({
       options: {accept: 'image/*,video/*'},
     }),
     defineField({
-      name: 'description',
-      title: 'Description',
-      type: 'text',
-      rows: 3,
-    }),
-    defineField({
       name: 'organisation',
       title: 'Organisation',
       type: 'reference',

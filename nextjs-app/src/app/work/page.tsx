@@ -1,6 +1,6 @@
 import { client } from "@/sanity/client";
 import { projectsListQuery, type ProjectListItem } from "@/sanity/queries";
-import { ProjectCard } from "@/components/ProjectCard";
+import { ProjectCard } from "@/components/blocks/ProjectCard";
 
 export const revalidate = 60;
 

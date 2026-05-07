@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
+
+@source inline("bg-gray-100 text-gray-950 bg-red-100 text-red-950 bg-orange-100 text-orange-950 bg-amber-100 text-amber-950 bg-yellow-100 text-yellow-950 bg-lime-100 text-lime-950 bg-green-100 text-green-950 bg-emerald-100 text-emerald-950 bg-teal-100 text-teal-950 bg-cyan-100 text-cyan-950 bg-sky-100 text-sky-950 bg-blue-100 text-blue-950 bg-indigo-100 text-indigo-950 bg-violet-100 text-violet-950 bg-purple-100 text-purple-950 bg-fuchsia-100 text-fuchsia-950 bg-pink-100 text-pink-950 bg-rose-100 text-rose-950");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -123,7 +126,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-weight: 500;
+    font-weight: 480;
     letter-spacing: -0.024em;
   }
   html {
@@ -134,7 +137,12 @@
   html::-webkit-scrollbar {
     display: none;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     letter-spacing: -0.032em;
   }
   /* Lenis / Locomotive Scroll */
@@ -145,4 +153,12 @@
   .lenis.lenis-smooth {
     scroll-behavior: auto !important;
   }
+}
+
+h1 {
+  font-size: var(--text-6xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--text-6xl--line-height);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-zinc-800);
 }

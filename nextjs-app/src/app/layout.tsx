@@ -13,8 +13,8 @@ const neueMontreal = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "oré ˖ ࣪⊹ product designer · paris, fr",
-  description: "Portfolio",
+  title: "oré ˖ ࣪⊹, product designer",
+  description: "aurélien louvel's internet space",
 };
 
 export default function RootLayout({

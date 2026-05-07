@@ -25,13 +25,24 @@ export type ProjectListItem = {
   organisation: { name: string; logoUrl: string | null } | null;
 };
 
+const sectionFields = `
+  _type,
+  _key,
+  heading,
+  body,
+  "images": images[]{ _key, "url": image.asset->url, caption, alt },
+  url,
+  "fileUrl": file.asset->url,
+  provider,
+  embedCode
+`;
+
 export const projectDetailQuery = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     _id,
     title,
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
-    description,
     "organisation": organisation->{ name, "logoUrl": logo.asset->url },
     startDate,
     endDate,
@@ -42,19 +53,72 @@ export const projectDetailQuery = defineQuery(`
       firstName,
       lastName,
       "avatarUrl": avatar.asset->url,
+      linkedinUrl,
       "roles": roles[]->{ _id, name }
     },
     redirectUrl,
-    sections
+    "sections": sections[] {
+      ${sectionFields},
+      "sections": sections[]{ ${sectionFields} }
+    }
   }
 `);
+
+export type SectionText = {
+  _type: "sectionText";
+  _key: string;
+  heading?: string | null;
+  body?: unknown[] | null;
+};
+
+export type SectionImages = {
+  _type: "sectionImages";
+  _key: string;
+  heading?: string | null;
+  images?: Array<{
+    _key: string;
+    url: string | null;
+    caption?: string | null;
+    alt?: string | null;
+  }> | null;
+};
+
+export type SectionVideo = {
+  _type: "sectionVideo";
+  _key: string;
+  heading?: string | null;
+  url?: string | null;
+  fileUrl?: string | null;
+};
+
+export type SectionIntegration = {
+  _type: "sectionIntegration";
+  _key: string;
+  heading?: string | null;
+  provider?: string | null;
+  url?: string | null;
+  embedCode?: string | null;
+};
+
+export type SectionSubPage = {
+  _type: "sectionSubPage";
+  _key: string;
+  heading?: string | null;
+  sections?: Array<SectionText | SectionImages | SectionVideo | SectionIntegration> | null;
+};
+
+export type Section =
+  | SectionText
+  | SectionImages
+  | SectionVideo
+  | SectionIntegration
+  | SectionSubPage;
 
 export type ProjectDetail = {
   _id: string;
   title: string;
   slug: string;
   thumbnailRef: string | null;
-  description: string | null;
   organisation: { name: string; logoUrl: string | null } | null;
   startDate: string | null;
   endDate: string | null;
@@ -65,10 +129,11 @@ export type ProjectDetail = {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    linkedinUrl: string | null;
     roles: Array<{ _id: string; name: string }> | null;
   }> | null;
   redirectUrl: string | null;
-  sections: unknown[] | null;
+  sections: Section[] | null;
 };
 
 export const allProjectSlugsQuery = defineQuery(`
