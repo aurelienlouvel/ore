@@ -62,11 +62,9 @@ export function ActionBar() {
       <div className="flex h-16 items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
         {mode === "nav" ? (
           <>
-            <Link
-              href="/work"
-              className="flex h-11 items-center px-3 text-base font-semibold text-zinc-950"
-            >
-              oré ˖ ⊹
+            <Link href="/work" className="flex h-11 items-center pl-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="oré" className="h-5 w-auto" />
             </Link>
 
             {sep}
