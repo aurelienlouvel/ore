@@ -32,11 +32,18 @@ export const projectDetailQuery = defineQuery(`
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
     description,
-    "organisation": organisation->{ name },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url },
     startDate,
     endDate,
     "tags": tags[]->{ _id, name, color, icon },
     "roles": roles[]->{ _id, name, color, icon },
+    "mates": contributors[]->{
+      _id,
+      firstName,
+      lastName,
+      "avatarUrl": avatar.asset->url,
+      "roles": roles[]->{ _id, name }
+    },
     redirectUrl,
     sections
   }
@@ -48,11 +55,18 @@ export type ProjectDetail = {
   slug: string;
   thumbnailRef: string | null;
   description: string | null;
-  organisation: { name: string } | null;
+  organisation: { name: string; logoUrl: string | null } | null;
   startDate: string | null;
   endDate: string | null;
   tags: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
+  mates: Array<{
+    _id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    roles: Array<{ _id: string; name: string }> | null;
+  }> | null;
   redirectUrl: string | null;
   sections: unknown[] | null;
 };

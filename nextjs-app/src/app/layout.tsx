@@ -3,8 +3,8 @@ import localFont from "next/font/local";
 import { Suspense } from "react";
 import "./globals.css";
 import { ActionBarProvider } from "@/contexts/action-bar-context";
-import { ActionBar } from "@/components/action-bar";
-import { ScrollInit } from "@/components/scroll-init";
+import { ActionBar } from "@/components/ActionBar";
+import { ScrollInit } from "@/components/ScrollInit";
 
 const neueMontreal = localFont({
   src: "./fonts/PPNeueMontreal-Variable.ttf",
