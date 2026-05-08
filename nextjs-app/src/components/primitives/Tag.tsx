@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
-import { DynamicIcon } from "../DynamicIcon";
+import { Icon } from "./Icon";
 
 export function Tag({
   name,
@@ -14,7 +14,7 @@ export function Tag({
     <Badge
       className={`h-auto border-0 px-2.5 py-1 rounded-md font-medium${color ? ` bg-${color}-100 text-${color}-950` : ""}`}
     >
-      {icon && <DynamicIcon name={icon} size={12} />}
+      {icon && <Icon name={icon} size={12} strokeWidth={1.8} />}
       {name}
     </Badge>
   );

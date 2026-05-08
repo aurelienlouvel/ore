@@ -1,4 +1,4 @@
-import { DynamicIcon } from "../DynamicIcon";
+import { Icon } from "./Icon";
 
 export function Role({
   name,
@@ -10,9 +10,9 @@ export function Role({
   comma?: boolean;
 }) {
   return (
-    <div className="h-auto flex flex-row items-center gap-1 font-semibold text-lg text-zinc-600">
+    <div className="h-auto flex flex-row items-center gap-1 font-semibold text-lg text-zinc-700">
       {name}
-      {icon && <DynamicIcon name={icon} size={16} />}
+      {icon && <Icon name={icon} size={16} strokeWidth={2.4} />}
       {comma && <span>, </span>}
     </div>
   );
