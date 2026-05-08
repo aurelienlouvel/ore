@@ -12,6 +12,13 @@ import { Role } from "@/components/primitives/Role";
 import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
 import { SectionRenderer } from "@/components/blocks/SectionRenderer";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  CapIcon,
+  UserMultipleIcon,
+  Calendar02Icon,
+  Clock04Icon,
+} from "@hugeicons/core-free-icons";
 
 export const revalidate = 60;
 
@@ -41,7 +48,7 @@ export default async function ProjectPage({
       <div className="px-12 py-12">
         <h1 className="max-w-3xl mb-8">{project.title}</h1>
 
-        <div className="flex flex-row items-center gap-6 px-0.5">
+        <div className="flex flex-row items-center gap-6 px-1.5">
           {/* Organisation */}
           {project.organisation && (
             <div className="flex items-center gap-2">
@@ -84,11 +91,14 @@ export default async function ProjectPage({
       )}
 
       {/* Metadata sections below media */}
-      <div className="px-12 py-12 flex flex-wrap gap-12">
+      <div className="px-12 py-12 flex flex-wrap gap-20">
         {/* Role */}
         {project.roles && project.roles.length > 0 && (
           <div>
-            <p className="text-sm font-semibold text-zinc-400 mb-3">role</p>
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+              <HugeiconsIcon icon={CapIcon} size={12} strokeWidth={2} />
+              role
+            </div>
             <div className="flex flex-wrap gap-1 max-w-[320]">
               {project.roles.map((role, i) => (
                 <Role
@@ -105,7 +115,14 @@ export default async function ProjectPage({
         {/* Mates */}
         {project.mates && project.mates.length > 0 && (
           <div>
-            <p className="text-sm font-semibold text-zinc-400 mb-3">mates</p>
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+              <HugeiconsIcon
+                icon={UserMultipleIcon}
+                size={12}
+                strokeWidth={2}
+              />
+              mates
+            </div>
             <MatesBlock mates={project.mates} />
           </div>
         )}
@@ -113,8 +130,11 @@ export default async function ProjectPage({
         {/* Timeline */}
         {project.startDate && (
           <div>
-            <p className="text-sm font-semibold text-zinc-400 mb-3">timeline</p>
-            <p className="text-md">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+              <HugeiconsIcon icon={Calendar02Icon} size={12} strokeWidth={2} />
+              timeline
+            </div>
+            <p className="text-lg font-semibold text-zinc-700">
               {formatMonth(project.startDate)}
               {" → "}
               {project.endDate ? formatMonth(project.endDate) : "Present"}
@@ -125,8 +145,11 @@ export default async function ProjectPage({
         {/* Duration */}
         {project.startDate && (
           <div>
-            <p className="text-sm font-semibold text-zinc-400 mb-3">duration</p>
-            <p className="text-md">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+              <HugeiconsIcon icon={Clock04Icon} size={12} strokeWidth={2} />
+              duration
+            </div>
+            <p className="text-lg font-semibold text-zinc-700">
               {calcDuration(project.startDate, project.endDate)}
             </p>
           </div>
