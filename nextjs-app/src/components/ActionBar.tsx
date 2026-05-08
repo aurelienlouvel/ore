@@ -117,36 +117,11 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-12 inset-x-0 z-50 flex justify-center pointer-events-none px-6">
-      <div className="relative pointer-events-auto">
-        <AnimatePresence>
-          {toast !== null && (
-            <motion.span
-              key={toast.id}
-              className={cn(
-                "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
-                toast.color.bg,
-                toast.color.text,
-              )}
-              initial={{ opacity: 0, y: 18, rotate: toast.rotate }}
-              animate={{ opacity: 1, y: -22, rotate: toast.rotate }}
-              exit={{
-                opacity: 0,
-                y: -32,
-                x: toast.rotate > 0 ? 10 : -10,
-                rotate: toast.rotate,
-                transition: { duration: 0.26, ease: "easeOut" },
-              }}
-              transition={{ type: "spring", stiffness: 460, damping: 28 }}
-            >
-              email copied ;)
-            </motion.span>
-          )}
-        </AnimatePresence>
-
+      <div className="pointer-events-auto">
         <motion.div
           ref={barRef}
           style={{ width: widthMv }}
-          className="h-16 overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-lg backdrop-blur-md"
+          className="relative h-16 rounded-3xl border border-border/60 bg-white shadow-md backdrop-blur-2xl"
         >
           {mode === "nav" ? (
             <div className="flex h-full items-center px-2 whitespace-nowrap">
@@ -167,7 +142,7 @@ export function ActionBar() {
                       className={cn(
                         "flex h-11 items-center rounded-xl px-3 text-base transition-colors",
                         isActive
-                          ? "bg-zinc-50 text-zinc-950"
+                          ? "bg-zinc-50 text-zinc-950 "
                           : "text-zinc-600 hover:text-zinc-950",
                       )}
                       style={isActive ? { fontWeight: 540 } : undefined}
@@ -180,16 +155,47 @@ export function ActionBar() {
 
               {sep}
 
-              <motion.button
-                onClick={handleCopy}
-                className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
-                whileHover={{ scale: 0.95, rotate: -1.5 }}
-                whileTap={{ scale: 0.87, rotate: -2 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <HugeiconsIcon icon={MessageMultiple02Icon} size={15} strokeWidth={2} />
-                let&apos;s chat
-              </motion.button>
+              <div className="relative">
+                <AnimatePresence>
+                  {toast !== null && (
+                    <motion.span
+                      key={toast.id}
+                      className={cn(
+                        "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
+                        toast.color.bg,
+                        toast.color.text,
+                      )}
+                      initial={{ opacity: 0, y: 40, rotate: toast.rotate }}
+                      animate={{ opacity: 1, y: -8, rotate: toast.rotate }}
+                      exit={{
+                        opacity: 0,
+                        y: -20,
+                        x: toast.rotate > 0 ? 10 : -10,
+                        rotate: toast.rotate,
+                        transition: { duration: 0.26, ease: "easeOut" },
+                      }}
+                      transition={{ type: "spring", stiffness: 460, damping: 28 }}
+                    >
+                      email copied ;)
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  onClick={handleCopy}
+                  className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+                  whileHover={{ scale: 0.95, rotate: -1.5 }}
+                  whileTap={{ scale: 0.87, rotate: -2 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <HugeiconsIcon
+                    icon={MessageMultiple02Icon}
+                    size={15}
+                    strokeWidth={2}
+                  />
+                  let&apos;s chat
+                </motion.button>
+              </div>
             </div>
           ) : (
             <div className="flex h-full items-center px-2 whitespace-nowrap">
@@ -201,7 +207,11 @@ export function ActionBar() {
                 whileTap={{ scale: 0.87 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={ArrowLeft02Icon}
+                  size={16}
+                  strokeWidth={2}
+                />
               </motion.button>
 
               {projectData?.title && (
@@ -222,7 +232,11 @@ export function ActionBar() {
                     whileTap={{ scale: 0.87, rotate: -2 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
-                    <HugeiconsIcon icon={CursorMagicSelection04Icon} size={15} strokeWidth={2} />
+                    <HugeiconsIcon
+                      icon={CursorMagicSelection04Icon}
+                      size={15}
+                      strokeWidth={2}
+                    />
                     visit
                   </motion.a>
                 </>
@@ -234,3 +248,4 @@ export function ActionBar() {
     </div>
   );
 }
+
