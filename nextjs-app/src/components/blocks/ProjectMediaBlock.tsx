@@ -15,18 +15,12 @@ export function ProjectMediaBlock({
         <video
           src={url}
           className="h-full w-full object-cover"
-          controls
           playsInline
+          muted
+          autoPlay
         />
       ) : (
-        <Image
-          src={url}
-          alt={title}
-          fill
-          sizes="(max-width: 1024px) 100vw, 728px"
-          className="object-cover"
-          priority
-        />
+        <Image src={url} alt={title} fill className="object-cover" priority />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import { usePathname, useParams, useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -9,7 +9,7 @@ import {
   ArrowLeft02Icon,
   CursorMagicSelection04Icon,
 } from "@hugeicons/core-free-icons";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
 import { client } from "@/sanity/client";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +55,10 @@ export function ActionBar() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRotateRef = useRef<number>(2);
 
+  const barRef = useRef<HTMLDivElement>(null);
+  const widthMv = useMotionValue<number | string>("auto");
+  const initialized = useRef(false);
+
   const slug = typeof params?.slug === "string" ? params.slug : null;
 
   useEffect(() => {
@@ -76,6 +80,31 @@ export function ActionBar() {
       });
   }, [slug]);
 
+  // Animate actual CSS width (not FLIP scale transforms) to avoid content distortion
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+
+    // Temporarily unconstrain to measure natural content width
+    const saved = el.style.width;
+    el.style.width = "max-content";
+    const natural = el.offsetWidth;
+    el.style.width = saved;
+
+    if (!initialized.current) {
+      initialized.current = true;
+      widthMv.set(natural);
+      return;
+    }
+
+    animate(widthMv, natural, {
+      type: "spring",
+      stiffness: 320,
+      damping: 28,
+      mass: 1,
+    });
+  }, [mode, projectData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleCopy = () => {
     navigator.clipboard.writeText("louvel.aurelien.pro@gmail.com");
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -88,136 +117,120 @@ export function ActionBar() {
 
   return (
     <div className="fixed bottom-12 inset-x-0 z-50 flex justify-center pointer-events-none px-6">
-      <motion.div
-        layout
-        transition={{ type: "spring", stiffness: 60, damping: 12, mass: 1 }}
-        className="relative pointer-events-auto h-16 overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-lg backdrop-blur-md"
-      >
-        {/* Nav content — in normal flow when active (sets container width), absolutely positioned when inactive */}
-        <motion.div
-          layout
-          animate={{ opacity: mode === "nav" ? 1 : 0 }}
-          transition={{ duration: 0.25 }}
-          className={cn(
-            "flex h-full items-center px-2",
-            mode === "project" && "pointer-events-none absolute top-0 left-0",
-          )}
-        >
-          <Link href="/work" className="flex h-11 items-center pl-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="oré" className="h-5 w-auto" />
-          </Link>
-
-          {sep}
-
-          <nav className="flex items-center" aria-label="Main">
-            {NAV_LINKS.map(({ href, label }) => {
-              const isActive = pathname.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "flex h-11 items-center rounded-xl px-3 text-base transition-colors",
-                    isActive
-                      ? "bg-zinc-50 text-zinc-950"
-                      : "text-zinc-600 hover:text-zinc-950",
-                  )}
-                  style={isActive ? { fontWeight: 540 } : undefined}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {sep}
-
-          <div className="relative">
-            <AnimatePresence>
-              {toast !== null && (
-                <motion.span
-                  key={toast.id}
-                  className={cn(
-                    "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
-                    toast.color.bg,
-                    toast.color.text,
-                  )}
-                  initial={{ opacity: 0, y: 18, rotate: toast.rotate }}
-                  animate={{ opacity: 1, y: -22, rotate: toast.rotate }}
-                  exit={{
-                    opacity: 0,
-                    y: -32,
-                    x: toast.rotate > 0 ? 10 : -10,
-                    rotate: toast.rotate,
-                    transition: { duration: 0.26, ease: "easeOut" },
-                  }}
-                  transition={{ type: "spring", stiffness: 460, damping: 28 }}
-                >
-                  email copied ;)
-                </motion.span>
+      <div className="relative pointer-events-auto">
+        <AnimatePresence>
+          {toast !== null && (
+            <motion.span
+              key={toast.id}
+              className={cn(
+                "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
+                toast.color.bg,
+                toast.color.text,
               )}
-            </AnimatePresence>
-
-            <motion.button
-              onClick={handleCopy}
-              className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
-              whileHover={{ scale: 0.95, rotate: -1.5 }}
-              whileTap={{ scale: 0.87, rotate: -2 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              initial={{ opacity: 0, y: 18, rotate: toast.rotate }}
+              animate={{ opacity: 1, y: -22, rotate: toast.rotate }}
+              exit={{
+                opacity: 0,
+                y: -32,
+                x: toast.rotate > 0 ? 10 : -10,
+                rotate: toast.rotate,
+                transition: { duration: 0.26, ease: "easeOut" },
+              }}
+              transition={{ type: "spring", stiffness: 460, damping: 28 }}
             >
-              <HugeiconsIcon icon={MessageMultiple02Icon} size={15} strokeWidth={2} />
-              let&apos;s chat
-            </motion.button>
-          </div>
-        </motion.div>
+              email copied ;)
+            </motion.span>
+          )}
+        </AnimatePresence>
 
-        {/* Project content — in normal flow when active, absolutely positioned when inactive */}
         <motion.div
-          layout
-          animate={{ opacity: mode === "project" ? 1 : 0 }}
-          transition={{ duration: 0.25 }}
-          className={cn(
-            "flex h-full items-center px-2",
-            mode === "nav" && "pointer-events-none absolute top-0 left-0",
-          )}
+          ref={barRef}
+          style={{ width: widthMv }}
+          className="h-16 overflow-hidden rounded-3xl border border-border/60 bg-background/80 shadow-lg backdrop-blur-md"
         >
-          <motion.button
-            onClick={() => router.back()}
-            aria-label="Go back"
-            className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600"
-            whileHover={{ scale: 0.93 }}
-            whileTap={{ scale: 0.87 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={2} />
-          </motion.button>
+          {mode === "nav" ? (
+            <div className="flex h-full items-center px-2 whitespace-nowrap">
+              <Link href="/work" className="flex h-11 items-center pl-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="oré" className="h-5 w-auto" />
+              </Link>
 
-          {projectData?.title && (
-            <span className="whitespace-nowrap px-3 text-base font-medium text-zinc-950">
-              {projectData.title}
-            </span>
-          )}
-
-          {projectData?.redirectUrl && (
-            <>
               {sep}
-              <motion.a
-                href={projectData.redirectUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+
+              <nav className="flex items-center" aria-label="Main">
+                {NAV_LINKS.map(({ href, label }) => {
+                  const isActive = pathname.startsWith(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "flex h-11 items-center rounded-xl px-3 text-base transition-colors",
+                        isActive
+                          ? "bg-zinc-50 text-zinc-950"
+                          : "text-zinc-600 hover:text-zinc-950",
+                      )}
+                      style={isActive ? { fontWeight: 540 } : undefined}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {sep}
+
+              <motion.button
+                onClick={handleCopy}
+                className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
                 whileHover={{ scale: 0.95, rotate: -1.5 }}
                 whileTap={{ scale: 0.87, rotate: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <HugeiconsIcon icon={CursorMagicSelection04Icon} size={15} strokeWidth={2} />
-                visit
-              </motion.a>
-            </>
+                <HugeiconsIcon icon={MessageMultiple02Icon} size={15} strokeWidth={2} />
+                let&apos;s chat
+              </motion.button>
+            </div>
+          ) : (
+            <div className="flex h-full items-center px-2 whitespace-nowrap">
+              <motion.button
+                onClick={() => router.back()}
+                aria-label="Go back"
+                className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600"
+                whileHover={{ scale: 0.93 }}
+                whileTap={{ scale: 0.87 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <HugeiconsIcon icon={ArrowLeft02Icon} size={16} strokeWidth={2} />
+              </motion.button>
+
+              {projectData?.title && (
+                <span className="whitespace-nowrap px-3 text-base font-medium text-zinc-950">
+                  {projectData.title}
+                </span>
+              )}
+
+              {projectData?.redirectUrl && (
+                <>
+                  {sep}
+                  <motion.a
+                    href={projectData.redirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+                    whileHover={{ scale: 0.95, rotate: -1.5 }}
+                    whileTap={{ scale: 0.87, rotate: -2 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <HugeiconsIcon icon={CursorMagicSelection04Icon} size={15} strokeWidth={2} />
+                    visit
+                  </motion.a>
+                </>
+              )}
+            </div>
           )}
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 }
