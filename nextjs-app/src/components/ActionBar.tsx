@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MessageMultiple02Icon,
-  ArrowLeft01Icon,
-  PlayIcon,
+  ArrowLeft02Icon,
+  CursorMagicSelection04Icon,
 } from "@hugeicons/core-free-icons";
 import { motion, AnimatePresence } from "motion/react";
-import { useActionBar } from "@/contexts/action-bar-context";
+import { client } from "@/sanity/client";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -39,13 +39,42 @@ type ToastState = {
   rotate: number;
 };
 
+type ProjectBarData = {
+  title: string;
+  redirectUrl: string | null;
+};
+
 export function ActionBar() {
   const pathname = usePathname();
+  const params = useParams();
   const router = useRouter();
-  const { mode, projectData } = useActionBar();
+
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [mode, setMode] = useState<"nav" | "project">("nav");
+  const [projectData, setProjectData] = useState<ProjectBarData | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRotateRef = useRef<number>(2);
+
+  const slug = typeof params?.slug === "string" ? params.slug : null;
+
+  useEffect(() => {
+    if (!slug) {
+      setMode("nav");
+      setProjectData(null);
+      return;
+    }
+    client
+      .fetch<ProjectBarData>(
+        `*[_type == "project" && slug.current == $slug][0]{ title, redirectUrl }`,
+        { slug },
+      )
+      .then((data) => {
+        if (data) {
+          setProjectData(data);
+          setMode("project");
+        }
+      });
+  }, [slug]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText("louvel.aurelien.pro@gmail.com");
@@ -58,113 +87,154 @@ export function ActionBar() {
   };
 
   return (
-    <div className="fixed bottom-12 left-1/2 z-50 w-max -translate-x-1/2 max-w-[calc(100vw-48px)]">
-      <div className="flex h-16 items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md">
-        {mode === "nav" ? (
-          <>
-            <Link href="/work" className="flex h-11 items-center pl-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="oré" className="h-5 w-auto" />
-            </Link>
+    <div className="fixed bottom-12 inset-x-0 z-50 flex justify-center pointer-events-none px-6">
+      <motion.div
+        layout
+        transition={{ type: "spring", stiffness: 500, damping: 40 }}
+        className="relative pointer-events-auto flex h-16 items-center rounded-3xl border border-border/60 bg-background/80 px-2 shadow-lg backdrop-blur-md"
+        style={{ overflow: "hidden" }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          {mode === "nav" ? (
+            <motion.div
+              key="nav"
+              className="flex items-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+            >
+              <Link href="/work" className="flex h-11 items-center pl-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="oré" className="h-5 w-auto" />
+              </Link>
 
-            {sep}
+              {sep}
 
-            <nav className="flex items-center" aria-label="Main">
-              {NAV_LINKS.map(({ href, label }) => {
-                const isActive = pathname.startsWith(href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex h-11 items-center rounded-xl px-3 text-base transition-colors",
-                      isActive
-                        ? "bg-zinc-50 text-zinc-950"
-                        : "text-zinc-600 hover:text-zinc-950",
-                    )}
-                    style={isActive ? { fontWeight: 540 } : undefined}
-                  >
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
+              <nav className="flex items-center" aria-label="Main">
+                {NAV_LINKS.map(({ href, label }) => {
+                  const isActive = pathname.startsWith(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "flex h-11 items-center rounded-xl px-3 text-base transition-colors",
+                        isActive
+                          ? "bg-zinc-50 text-zinc-950"
+                          : "text-zinc-600 hover:text-zinc-950",
+                      )}
+                      style={isActive ? { fontWeight: 540 } : undefined}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
+              </nav>
 
-            {sep}
+              {sep}
 
-            <div className="relative">
-              <AnimatePresence>
-                {toast !== null && (
-                  <motion.span
-                    key={toast.id}
-                    className={cn(
-                      "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
-                      toast.color.bg,
-                      toast.color.text,
-                    )}
-                    initial={{ opacity: 0, y: 18, rotate: toast.rotate }}
-                    animate={{ opacity: 1, y: -22, rotate: toast.rotate }}
-                    exit={{
-                      opacity: 0,
-                      y: -32,
-                      x: toast.rotate > 0 ? 10 : -10,
-                      rotate: toast.rotate,
-                      transition: { duration: 0.26, ease: "easeOut" },
-                    }}
-                    transition={{ type: "spring", stiffness: 460, damping: 28 }}
-                  >
-                    email copied ;)
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <div className="relative">
+                <AnimatePresence>
+                  {toast !== null && (
+                    <motion.span
+                      key={toast.id}
+                      className={cn(
+                        "pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-1 text-xs",
+                        toast.color.bg,
+                        toast.color.text,
+                      )}
+                      initial={{ opacity: 0, y: 18, rotate: toast.rotate }}
+                      animate={{ opacity: 1, y: -22, rotate: toast.rotate }}
+                      exit={{
+                        opacity: 0,
+                        y: -32,
+                        x: toast.rotate > 0 ? 10 : -10,
+                        rotate: toast.rotate,
+                        transition: { duration: 0.26, ease: "easeOut" },
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 460,
+                        damping: 28,
+                      }}
+                    >
+                      email copied ;)
+                    </motion.span>
+                  )}
+                </AnimatePresence>
 
+                <motion.button
+                  onClick={handleCopy}
+                  className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+                  whileHover={{ scale: 0.95, rotate: -1.5 }}
+                  whileTap={{ scale: 0.87, rotate: -2 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <HugeiconsIcon
+                    icon={MessageMultiple02Icon}
+                    size={15}
+                    strokeWidth={2}
+                  />
+                  let&apos;s chat
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="project"
+              className="flex items-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+            >
               <motion.button
-                onClick={handleCopy}
-                className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
-                whileHover={{ scale: 0.95, rotate: -1.5 }}
-                whileTap={{ scale: 0.87, rotate: -2 }}
+                onClick={() => router.back()}
+                aria-label="Go back"
+                className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600"
+                whileHover={{ scale: 0.93 }}
+                whileTap={{ scale: 0.87 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <span className="text-sky-500">
-                  <HugeiconsIcon icon={MessageMultiple02Icon} size={15} strokeWidth={2} />
-                </span>
-                let&apos;s chat
+                <HugeiconsIcon
+                  icon={ArrowLeft02Icon}
+                  size={16}
+                  strokeWidth={2}
+                />
               </motion.button>
-            </div>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => router.back()}
-              className="flex h-11 items-center px-3 text-zinc-600 transition-colors hover:text-zinc-950"
-              aria-label="Go back"
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
-            </button>
 
-            {sep}
+              {projectData?.title && (
+                <span className="whitespace-nowrap px-3 text-base font-medium text-zinc-950">
+                  {projectData.title}
+                </span>
+              )}
 
-            <span className="flex h-11 items-center truncate px-3 text-base font-medium text-zinc-950">
-              {projectData?.title}
-            </span>
-
-            {projectData?.redirectUrl && (
-              <>
-                {sep}
-                <a
-                  href={projectData.redirectUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-base font-medium text-sky-900 transition-colors hover:bg-sky-200"
-                >
-                  <HugeiconsIcon icon={PlayIcon} size={15} strokeWidth={2} />
-                  launch
-                </a>
-              </>
-            )}
-          </>
-        )}
-      </div>
+              {projectData?.redirectUrl && (
+                <>
+                  {sep}
+                  <motion.a
+                    href={projectData.redirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+                    whileHover={{ scale: 0.95, rotate: -1.5 }}
+                    whileTap={{ scale: 0.87, rotate: -2 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <HugeiconsIcon
+                      icon={CursorMagicSelection04Icon}
+                      size={15}
+                      strokeWidth={2}
+                    />
+                    visit
+                  </motion.a>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }
