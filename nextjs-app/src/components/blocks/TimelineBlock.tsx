@@ -11,7 +11,7 @@ export function TimelineBlock({ startDate, endDate }: TimelineBlockProps) {
   return (
     <div className="flex items-center gap-5 text-sm text-muted-foreground">
       <div className="flex items-center gap-1.5">
-        <HugeiconsIcon icon={Calendar03Icon} size={14} />
+        <HugeiconsIcon icon={Calendar03Icon} size={14} strokeWidth={2} />
         <span>
           {formatMonth(startDate)}
           {" → "}
@@ -19,7 +19,7 @@ export function TimelineBlock({ startDate, endDate }: TimelineBlockProps) {
         </span>
       </div>
       <div className="flex items-center gap-1.5">
-        <HugeiconsIcon icon={Clock01Icon} size={14} />
+        <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={2} />
         <span>{calcDuration(startDate, endDate)}</span>
       </div>
     </div>

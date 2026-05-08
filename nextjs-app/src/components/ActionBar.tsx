@@ -126,7 +126,7 @@ export function ActionBar() {
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <span className="text-sky-500">
-                  <HugeiconsIcon icon={MessageMultiple02Icon} size={15} />
+                  <HugeiconsIcon icon={MessageMultiple02Icon} size={15} strokeWidth={2} />
                 </span>
                 let&apos;s chat
               </motion.button>
@@ -139,7 +139,7 @@ export function ActionBar() {
               className="flex h-11 items-center px-3 text-zinc-600 transition-colors hover:text-zinc-950"
               aria-label="Go back"
             >
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
+              <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
             </button>
 
             {sep}
@@ -157,7 +157,7 @@ export function ActionBar() {
                   rel="noopener noreferrer"
                   className="flex h-11 items-center gap-1.5 rounded-xl bg-sky-100 px-3 text-base font-medium text-sky-900 transition-colors hover:bg-sky-200"
                 >
-                  <HugeiconsIcon icon={PlayIcon} size={15} />
+                  <HugeiconsIcon icon={PlayIcon} size={15} strokeWidth={2} />
                   launch
                 </a>
               </>

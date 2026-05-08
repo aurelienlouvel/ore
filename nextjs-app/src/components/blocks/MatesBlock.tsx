@@ -32,7 +32,7 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
               }
             >
               <Avatar
-                size="lg"
+                size="default"
                 className="transition-transform hover:scale-110 hover:z-10"
               >
                 <AvatarImage src={mate.avatarUrl ?? undefined} alt={fullName} />
