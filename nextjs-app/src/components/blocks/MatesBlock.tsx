@@ -13,7 +13,7 @@ type Mate = NonNullable<ProjectDetail["mates"]>[number];
 export function MatesBlock({ mates }: { mates: Mate[] }) {
   return (
     <div className="flex -space-x-3">
-      {mates.map((mate) => {
+      {mates.filter((mate) => mate.person != null).map((mate) => {
         const { person, roles } = mate;
         const fullName = `${person.firstName} ${person.lastName}`;
         const initials = fullName

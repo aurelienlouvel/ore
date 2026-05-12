@@ -48,7 +48,7 @@ export const projectDetailQuery = defineQuery(`
     endDate,
     "tags": tags[]->{ _id, name, color, icon },
     "roles": roles[]->{ _id, name, color, icon },
-    "mates": contributors[] {
+    "mates": contributors[defined(person)] {
       _key,
       "person": person->{ _id, firstName, lastName, "avatarUrl": avatar.asset->url, linkedinUrl },
       "roles": roles[]->{ _id, name }
