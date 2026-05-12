@@ -57,15 +57,15 @@ export const projectType = defineType({
     }),
     defineField({
       name: 'startDate',
-      title: 'Start Month',
+      title: 'Start Date',
       type: 'date',
-      options: {dateFormat: 'YYYY-MM'},
+      options: {dateFormat: 'YYYY-MM-DD'},
     }),
     defineField({
       name: 'endDate',
-      title: 'End Month',
+      title: 'End Date',
       type: 'date',
-      options: {dateFormat: 'YYYY-MM'},
+      options: {dateFormat: 'YYYY-MM-DD'},
     }),
     defineField({
       name: 'tags',
@@ -83,7 +83,42 @@ export const projectType = defineType({
       name: 'contributors',
       title: 'Mates',
       type: 'array',
-      of: [{type: 'reference', to: [{type: 'person'}]}],
+      of: [
+        {
+          type: 'object',
+          name: 'contributor',
+          title: 'Contributor',
+          preview: {
+            select: {
+              firstName: 'person.firstName',
+              lastName: 'person.lastName',
+              media: 'person.avatar',
+            },
+            prepare({firstName, lastName, media}: {firstName?: string; lastName?: string; media?: unknown}) {
+              return {
+                title: [firstName, lastName].filter(Boolean).join(' ') || 'Unknown',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                media: media as any,
+              }
+            },
+          },
+          fields: [
+            defineField({
+              name: 'person',
+              title: 'Person',
+              type: 'reference',
+              to: [{type: 'person'}],
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'roles',
+              title: 'Roles',
+              type: 'array',
+              of: [{type: 'reference', to: [{type: 'role'}]}],
+            }),
+          ],
+        },
+      ],
     }),
     defineField({
       name: 'redirectUrl',
