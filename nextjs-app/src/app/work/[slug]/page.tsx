@@ -48,7 +48,7 @@ export default async function ProjectPage({
       <div className="px-12 py-12">
         <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
-        <div className="flex flex-row items-center gap-6 px-1.5">
+        <div className="flex flex-row items-center gap-4 px-1.5">
           {/* Organisation */}
           {project.organisation && (
             <div className="flex items-center gap-2">
@@ -57,10 +57,10 @@ export default async function ProjectPage({
                 <img
                   src={project.organisation.logoUrl}
                   alt=""
-                  className="h-5 w-5 rounded-sm object-contain"
+                  className="h-6 w-6 rounded-sm object-contain"
                 />
               )}
-              <span className="text-sm font-medium text-zinc-600">
+              <span className="text-md font-medium text-zinc-700">
                 {project.organisation.name}
               </span>
             </div>
@@ -68,7 +68,7 @@ export default async function ProjectPage({
 
           {/* Tags — colored */}
           {project.tags && project.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {project.tags.map((tag) => (
                 <Tag
                   key={tag._id}
@@ -137,8 +137,17 @@ export default async function ProjectPage({
             <p className="text-lg font-semibold text-zinc-700">
               {(() => {
                 const start = formatMonth(project.startDate!);
-                const end = project.endDate ? formatMonth(project.endDate) : "Present";
-                return start === end ? start : `${start} → ${end}`;
+                const end = project.endDate
+                  ? formatMonth(project.endDate)
+                  : "Present";
+                if (start === end) return start;
+                return (
+                  <>
+                    {start}
+                    <span className="px-2 font-semibold text-zinc-400">→</span>
+                    {end}
+                  </>
+                );
               })()}
             </p>
           </div>
