@@ -14,7 +14,8 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
   return (
     <div className="flex -space-x-3">
       {mates.map((mate) => {
-        const fullName = `${mate.firstName} ${mate.lastName}`;
+        const { person, roles } = mate;
+        const fullName = `${person.firstName} ${person.lastName}`;
         const initials = fullName
           .split(" ")
           .map((n) => n[0])
@@ -23,27 +24,27 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
           .toUpperCase();
 
         return (
-          <HoverCard key={mate._id}>
+          <HoverCard key={mate._key}>
             <HoverCardTrigger
-              className={`focus:outline-none ${mate.linkedinUrl ? "cursor-pointer" : "cursor-default"}`}
+              className={`focus:outline-none ${person.linkedinUrl ? "cursor-pointer" : "cursor-default"}`}
               onClick={() =>
-                mate.linkedinUrl &&
-                window.open(mate.linkedinUrl, "_blank", "noopener")
+                person.linkedinUrl &&
+                window.open(person.linkedinUrl, "_blank", "noopener")
               }
             >
               <Avatar
                 size="default"
                 className="transition-transform hover:scale-110 hover:z-10"
               >
-                <AvatarImage src={mate.avatarUrl ?? undefined} alt={fullName} />
+                <AvatarImage src={person.avatarUrl ?? undefined} alt={fullName} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </HoverCardTrigger>
             <HoverCardContent side="top" className="w-auto min-w-36 p-3">
               <p className="text-sm font-semibold leading-tight">{fullName}</p>
-              {mate.roles?.[0] && (
+              {roles?.[0] && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {mate.roles[0].name}
+                  {roles[0].name}
                 </p>
               )}
             </HoverCardContent>

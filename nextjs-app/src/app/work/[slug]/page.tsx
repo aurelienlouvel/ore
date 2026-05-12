@@ -46,7 +46,7 @@ export default async function ProjectPage({
   return (
     <main className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:py-16">
       <div className="px-12 py-12">
-        <h1 className="max-w-3xl mb-8">{project.title}</h1>
+        <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
         <div className="flex flex-row items-center gap-6 px-1.5">
           {/* Organisation */}

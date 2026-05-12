@@ -174,7 +174,11 @@ export function ActionBar() {
                         rotate: toast.rotate,
                         transition: { duration: 0.26, ease: "easeOut" },
                       }}
-                      transition={{ type: "spring", stiffness: 460, damping: 28 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 460,
+                        damping: 28,
+                      }}
                     >
                       email copied ;)
                     </motion.span>
@@ -248,4 +252,3 @@ export function ActionBar() {
     </div>
   );
 }
-

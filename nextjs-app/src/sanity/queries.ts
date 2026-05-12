@@ -48,12 +48,9 @@ export const projectDetailQuery = defineQuery(`
     endDate,
     "tags": tags[]->{ _id, name, color, icon },
     "roles": roles[]->{ _id, name, color, icon },
-    "mates": contributors[]->{
-      _id,
-      firstName,
-      lastName,
-      "avatarUrl": avatar.asset->url,
-      linkedinUrl,
+    "mates": contributors[] {
+      _key,
+      "person": person->{ _id, firstName, lastName, "avatarUrl": avatar.asset->url, linkedinUrl },
       "roles": roles[]->{ _id, name }
     },
     redirectUrl,
@@ -125,11 +122,14 @@ export type ProjectDetail = {
   tags: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   mates: Array<{
-    _id: string;
-    firstName: string;
-    lastName: string;
-    avatarUrl: string | null;
-    linkedinUrl: string | null;
+    _key: string;
+    person: {
+      _id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string | null;
+      linkedinUrl: string | null;
+    };
     roles: Array<{ _id: string; name: string }> | null;
   }> | null;
   redirectUrl: string | null;
