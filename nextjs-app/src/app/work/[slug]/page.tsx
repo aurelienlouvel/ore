@@ -135,9 +135,11 @@ export default async function ProjectPage({
               timeline
             </div>
             <p className="text-lg font-semibold text-zinc-700">
-              {formatMonth(project.startDate)}
-              {" → "}
-              {project.endDate ? formatMonth(project.endDate) : "Present"}
+              {(() => {
+                const start = formatMonth(project.startDate!);
+                const end = project.endDate ? formatMonth(project.endDate) : "Present";
+                return start === end ? start : `${start} → ${end}`;
+              })()}
             </p>
           </div>
         )}
