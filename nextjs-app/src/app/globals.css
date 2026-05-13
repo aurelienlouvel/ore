@@ -123,11 +123,12 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-variation-settings: "wght" var(--font-wght, 480);
   }
   body {
     @apply bg-background text-foreground;
+    --font-wght: 480;
     font-weight: 480;
-    font-variation-settings: 'wght' 480;
     letter-spacing: -0.024em;
   }
   html {
@@ -157,10 +158,22 @@
 }
 
 h1 {
+  --font-wght: 640;
   font-size: var(--text-6xl);
   font-weight: 640;
-  font-variation-settings: 'wght' 640;
   line-height: var(--text-6xl--line-height);
   letter-spacing: var(--tracking-tight);
   color: var(--text-zinc-800);
+}
+
+@layer utilities {
+  .font-thin     { --font-wght: 100; }
+  .font-extralight { --font-wght: 200; }
+  .font-light    { --font-wght: 300; }
+  .font-normal   { --font-wght: 400; }
+  .font-medium   { --font-wght: 500; }
+  .font-semibold { --font-wght: 600; }
+  .font-bold     { --font-wght: 700; }
+  .font-extrabold { --font-wght: 800; }
+  .font-black    { --font-wght: 900; }
 }
