@@ -127,6 +127,7 @@
   body {
     @apply bg-background text-foreground;
     font-weight: 480;
+    font-variation-settings: 'wght' 480;
     letter-spacing: -0.024em;
   }
   html {
@@ -158,6 +159,7 @@
 h1 {
   font-size: var(--text-6xl);
   font-weight: 640;
+  font-variation-settings: 'wght' 640;
   line-height: var(--text-6xl--line-height);
   letter-spacing: var(--tracking-tight);
   color: var(--text-zinc-800);
