@@ -145,7 +145,14 @@ export function ActionBar() {
                           ? "bg-zinc-50 text-zinc-950 "
                           : "text-zinc-600 hover:text-zinc-950",
                       )}
-                      style={isActive ? { fontWeight: 540, fontVariationSettings: "'wght' 540" } : undefined}
+                      style={
+                        isActive
+                          ? {
+                              fontWeight: 580,
+                              fontVariationSettings: "'wght' 580",
+                            }
+                          : undefined
+                      }
                     >
                       {label}
                     </Link>
