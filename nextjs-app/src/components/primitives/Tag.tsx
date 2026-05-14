@@ -12,7 +12,7 @@ export function Tag({
 }) {
   return (
     <Badge
-      className={`h-auto border-0 px-2.5 py-1 rounded-md font-medium${color ? ` bg-${color}-100 text-${color}-950` : ""}`}
+      className={`h-auto border-0 px-2.5 py-1 rounded-md text-sm font-medium ${color ? ` bg-${color}-100 text-${color}-950` : ""}`}
     >
       {icon && <Icon name={icon} size={12} strokeWidth={1.8} />}
       {name}

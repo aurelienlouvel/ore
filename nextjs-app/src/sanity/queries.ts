@@ -51,7 +51,7 @@ export const projectDetailQuery = defineQuery(`
     "mates": contributors[defined(person)] {
       _key,
       "person": person->{ _id, firstName, lastName, "avatarUrl": avatar.asset->url, linkedinUrl },
-      "roles": roles[]->{ _id, name }
+      "roles": roles[]->{ _id, name, color, icon }
     },
     redirectUrl,
     "sections": sections[] {
@@ -130,7 +130,7 @@ export type ProjectDetail = {
       avatarUrl: string | null;
       linkedinUrl: string | null;
     };
-    roles: Array<{ _id: string; name: string }> | null;
+    roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   }> | null;
   redirectUrl: string | null;
   sections: Section[] | null;

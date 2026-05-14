@@ -1,19 +1,35 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/HoverCard";
+import { Icon } from "@/components/primitives/Icon";
 import type { ProjectDetail } from "@/sanity/queries";
 
 type Mate = NonNullable<ProjectDetail["mates"]>[number];
 
+const SPRING = {
+  type: "spring",
+  stiffness: 280,
+  damping: 26,
+} as const;
+
+// Deterministic rotation from Sanity _key — same value across all pages/reloads
+function seededRotation(key: string): number {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) {
+    h = (Math.imul(31, h) + key.charCodeAt(i)) | 0;
+  }
+  return ((h & 0xff) / 255) * 6 - 3; // -3° to +3°
+}
+
 export function MatesBlock({ mates }: { mates: Mate[] }) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  const filtered = mates.filter((m) => m.person != null);
+
   return (
-    <div className="flex -space-x-3">
-      {mates.filter((mate) => mate.person != null).map((mate) => {
+    <div className="flex -space-x-2 pt-2">
+      {filtered.map((mate) => {
         const { person, roles } = mate;
         const fullName = `${person.firstName} ${person.lastName}`;
         const initials = fullName
@@ -22,33 +38,82 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
           .join("")
           .slice(0, 2)
           .toUpperCase();
+        const isHovered = hoveredKey === mate._key;
+        const baseRotation = seededRotation(mate._key) * 2.5;
 
         return (
-          <HoverCard key={mate._key}>
-            <HoverCardTrigger
-              className={`focus:outline-none ${person.linkedinUrl ? "cursor-pointer" : "cursor-default"}`}
-              onClick={() =>
-                person.linkedinUrl &&
-                window.open(person.linkedinUrl, "_blank", "noopener")
-              }
+          <div
+            key={mate._key}
+            className="relative"
+            style={{ zIndex: isHovered ? 10 : 1 }}
+            onPointerEnter={() => setHoveredKey(mate._key)}
+            onPointerLeave={() => setHoveredKey(null)}
+            onClick={() =>
+              person.linkedinUrl &&
+              window.open(person.linkedinUrl, "_blank", "noopener")
+            }
+          >
+            {/* Avatar */}
+            <motion.div
+              animate={{
+                rotate: isHovered ? 0 : baseRotation,
+                scale: isHovered ? 1.6 : 1,
+              }}
+              transition={SPRING}
+              className="cursor-pointer [filter:drop-shadow(0_1px_4px_rgb(0_0_0/0.08))]"
             >
-              <Avatar
-                size="default"
-                className="transition-transform hover:scale-110 hover:z-10"
-              >
-                <AvatarImage src={person.avatarUrl ?? undefined} alt={fullName} />
-                <AvatarFallback>{initials}</AvatarFallback>
+              <Avatar className="!h-10 rounded-lg ring-2 ring-white after:rounded-lg">
+                <AvatarImage
+                  src={person.avatarUrl ?? undefined}
+                  alt={fullName}
+                  className="aspect-auto rounded-lg"
+                />
+                <AvatarFallback className="rounded-lg">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
-            </HoverCardTrigger>
-            <HoverCardContent side="top" className="w-auto min-w-36 p-3">
-              <p className="text-sm font-semibold leading-tight">{fullName}</p>
-              {roles?.[0] && (
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {roles[0].name}
-                </p>
+            </motion.div>
+
+            {/* Info panel — appears below, slides out from behind the avatar */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  className="pointer-events-none absolute top-full left-1/2 mt-5 flex -translate-x-1/2 flex-col items-center gap-1.5"
+                  style={{ transformOrigin: "50% calc(0% - 32px)" }}
+                  initial={{
+                    opacity: 0,
+                    y: -28,
+                    scale: 0.4,
+                    rotate: baseRotation,
+                  }}
+                  animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                  exit={{
+                    opacity: 0,
+                    y: -20,
+                    scale: 0.4,
+                    transition: { duration: 0.12 },
+                  }}
+                  transition={SPRING}
+                >
+                  <p className="text-lg font-semibold text-zinc-900 whitespace-nowrap text-center">
+                    {person.firstName} {person.lastName}
+                  </p>
+                  {(roles ?? []).map((role, ri) => (
+                    <div
+                      key={role._id}
+                      style={{ rotate: `${(Math.abs(seededRotation(role._id)) * 0.3 * (ri % 2 === 0 ? 1 : -1)).toFixed(1)}deg` }}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap${role.color ? ` bg-${role.color}-100 text-${role.color}-950` : " bg-zinc-100 text-zinc-900"}`}
+                    >
+                      {role.icon && (
+                        <Icon name={role.icon} size={10} strokeWidth={2} />
+                      )}
+                      {role.name}
+                    </div>
+                  ))}
+                </motion.div>
               )}
-            </HoverCardContent>
-          </HoverCard>
+            </AnimatePresence>
+          </div>
         );
       })}
     </div>

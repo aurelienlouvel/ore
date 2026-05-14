@@ -44,7 +44,7 @@ export default async function ProjectPage({
   const isVideo = isVideoRef(project.thumbnailRef);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:py-16">
+    <main className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-16 sm:pb-64">
       <div className="px-12 py-12">
         <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
@@ -115,7 +115,7 @@ export default async function ProjectPage({
         {/* Mates */}
         {project.mates && project.mates.length > 0 && (
           <div>
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-2">
               <HugeiconsIcon
                 icon={UserMultipleIcon}
                 size={12}
