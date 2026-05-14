@@ -28,7 +28,7 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
   const filtered = mates.filter((m) => m.person != null);
 
   return (
-    <div className="flex -space-x-2 pt-2">
+    <div className="flex -space-x-1 pt-2">
       {filtered.map((mate) => {
         const { person, roles } = mate;
         const fullName = `${person.firstName} ${person.lastName}`;
@@ -101,7 +101,9 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
                   {(roles ?? []).map((role, ri) => (
                     <div
                       key={role._id}
-                      style={{ rotate: `${(Math.abs(seededRotation(role._id)) * 0.3 * (ri % 2 === 0 ? 1 : -1)).toFixed(1)}deg` }}
+                      style={{
+                        rotate: `${(Math.abs(seededRotation(role._id)) * 0.3 * (ri % 2 === 0 ? 1 : -1)).toFixed(1)}deg`,
+                      }}
                       className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap${role.color ? ` bg-${role.color}-100 text-${role.color}-950` : " bg-zinc-100 text-zinc-900"}`}
                     >
                       {role.icon && (

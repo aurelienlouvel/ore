@@ -12,6 +12,7 @@ import { Role } from "@/components/primitives/Role";
 import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
 import { SectionRenderer } from "@/components/blocks/SectionRenderer";
+import { ProjectPageClient } from "./ProjectPageClient";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CapIcon,
@@ -45,6 +46,7 @@ export default async function ProjectPage({
 
   return (
     <main className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-16 sm:pb-64">
+      <ProjectPageClient title={project.title} redirectUrl={project.redirectUrl} />
       <div className="px-12 py-12">
         <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 

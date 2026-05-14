@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Suspense } from "react";
 import "./globals.css";
 import { ActionBar } from "@/components/ActionBar";
+import { ActionBarProvider } from "@/contexts/ActionBarContext";
 import { ScrollInit } from "@/components/ScrollInit";
 
 const neueMontreal = localFont({
@@ -24,11 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${neueMontreal.variable} antialiased`}>
       <body className="min-h-dvh bg-background text-foreground">
-        <ScrollInit />
-        {children}
-        <Suspense fallback={null}>
+        <ActionBarProvider>
+          <ScrollInit />
+          {children}
           <ActionBar />
-        </Suspense>
+        </ActionBarProvider>
       </body>
     </html>
   );

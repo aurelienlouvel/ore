@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect } from "react";
 import Link from "next/link";
-import { usePathname, useParams, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MessageMultiple02Icon,
@@ -10,7 +10,7 @@ import {
   CursorMagicSelection04Icon,
 } from "@hugeicons/core-free-icons";
 import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
-import { client } from "@/sanity/client";
+import { useActionBar } from "@/contexts/ActionBarContext";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -39,19 +39,12 @@ type ToastState = {
   rotate: number;
 };
 
-type ProjectBarData = {
-  title: string;
-  redirectUrl: string | null;
-};
-
 export function ActionBar() {
   const pathname = usePathname();
-  const params = useParams();
   const router = useRouter();
+  const { mode, projectData } = useActionBar();
 
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [mode, setMode] = useState<"nav" | "project">("nav");
-  const [projectData, setProjectData] = useState<ProjectBarData | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRotateRef = useRef<number>(2);
 
@@ -59,33 +52,11 @@ export function ActionBar() {
   const widthMv = useMotionValue<number | string>("auto");
   const initialized = useRef(false);
 
-  const slug = typeof params?.slug === "string" ? params.slug : null;
-
-  useEffect(() => {
-    if (!slug) {
-      setMode("nav");
-      setProjectData(null);
-      return;
-    }
-    client
-      .fetch<ProjectBarData>(
-        `*[_type == "project" && slug.current == $slug][0]{ title, redirectUrl }`,
-        { slug },
-      )
-      .then((data) => {
-        if (data) {
-          setProjectData(data);
-          setMode("project");
-        }
-      });
-  }, [slug]);
-
   // Animate actual CSS width (not FLIP scale transforms) to avoid content distortion
   useLayoutEffect(() => {
     const el = barRef.current;
     if (!el) return;
 
-    // Temporarily unconstrain to measure natural content width
     const saved = el.style.width;
     el.style.width = "max-content";
     const natural = el.offsetWidth;
@@ -194,7 +165,7 @@ export function ActionBar() {
 
                 <motion.button
                   onClick={handleCopy}
-                  className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500"
+                  className="flex h-10 items-center gap-1.5 rounded-xl bg-sky-50 px-3 text-base font-medium text-sky-500 cursor-pointer"
                   whileHover={{ scale: 0.95, rotate: -1.5 }}
                   whileTap={{ scale: 0.87, rotate: -2 }}
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -213,7 +184,7 @@ export function ActionBar() {
               <motion.button
                 onClick={() => router.back()}
                 aria-label="Go back"
-                className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600"
+                className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600 cursor-pointer"
                 whileHover={{ scale: 0.93 }}
                 whileTap={{ scale: 0.87 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
