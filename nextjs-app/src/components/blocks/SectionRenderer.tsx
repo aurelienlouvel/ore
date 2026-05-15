@@ -1,33 +1,19 @@
-import type { Section, SectionSubPage } from "@/sanity/queries";
-import { SectionText } from "./SectionText";
-import { SectionImages } from "./SectionImages";
-import { SectionVideo } from "./SectionVideo";
-import { SectionIntegration } from "./SectionIntegration";
+import type { ContentSection } from "@/sanity/queries";
+import { BlockRenderer } from "./BlockRenderer";
 
-function SubPage({ section }: { section: SectionSubPage }) {
+export function SectionRenderer({ section }: { section: ContentSection }) {
   return (
-    <div>
-      {section.heading && <h2 className="mb-8">{section.heading}</h2>}
-      {section.sections?.map((s) => (
-        <SectionRenderer key={s._key} section={s} />
-      ))}
-    </div>
+    <section className="py-12">
+      <h2 className="text-xl font-semibold text-zinc-400 mb-8">
+        {section.title}
+      </h2>
+      {section.blocks && section.blocks.length > 0 && (
+        <div className="flex flex-col gap-8">
+          {section.blocks.map((block) => (
+            <BlockRenderer key={block._key} block={block} />
+          ))}
+        </div>
+      )}
+    </section>
   );
-}
-
-export function SectionRenderer({ section }: { section: Section }) {
-  switch (section._type) {
-    case "sectionText":
-      return <SectionText section={section} />;
-    case "sectionImages":
-      return <SectionImages section={section} />;
-    case "sectionVideo":
-      return <SectionVideo section={section} />;
-    case "sectionIntegration":
-      return <SectionIntegration section={section} />;
-    case "sectionSubPage":
-      return <SubPage section={section} />;
-    default:
-      return null;
-  }
 }

@@ -11,7 +11,7 @@ import { Tag } from "@/components/primitives/Tag";
 import { Role } from "@/components/primitives/Role";
 import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
-import { SectionRenderer } from "@/components/blocks/SectionRenderer";
+import { ContentRenderer } from "@/components/blocks/ContentRenderer";
 import { ProjectPageClient } from "./ProjectPageClient";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -170,13 +170,9 @@ export default async function ProjectPage({
       </div>
 
       {/* Content sections */}
-      {project.sections && project.sections.length > 0 && (
-        <div className="px-12 mt-4 divide-y divide-border">
-          {project.sections.map((section) => (
-            <SectionRenderer key={section._key} section={section} />
-          ))}
-        </div>
-      )}
+      <div className="px-12 mt-4">
+        <ContentRenderer content={project.content} />
+      </div>
     </main>
   );
 }

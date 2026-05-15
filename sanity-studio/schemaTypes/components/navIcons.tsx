@@ -5,6 +5,9 @@ import {
   Building03Icon,
   UserIcon,
   CapIcon,
+  TokenCircleIcon,
+  Briefcase01Icon,
+  ContentWritingIcon,
 } from '@hugeicons/core-free-icons'
 
 export const ProjectNavIcon = () => (
@@ -21,4 +24,13 @@ export const PersonNavIcon = () => (
 )
 export const RoleNavIcon = () => (
   <HugeiconsIcon icon={CapIcon} size={17} color="currentColor" />
+)
+export const ArtifactNavIcon = () => (
+  <HugeiconsIcon icon={TokenCircleIcon} size={17} color="currentColor" />
+)
+export const ExperienceNavIcon = () => (
+  <HugeiconsIcon icon={Briefcase01Icon} size={17} color="currentColor" />
+)
+export const ContractTypeNavIcon = () => (
+  <HugeiconsIcon icon={ContentWritingIcon} size={17} color="currentColor" />
 )

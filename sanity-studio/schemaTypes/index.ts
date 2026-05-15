@@ -3,12 +3,17 @@ import {roleType} from './role'
 import {organisationType} from './organisation'
 import {personType} from './person'
 import {
-  sectionTextType,
-  sectionImagesType,
-  sectionVideoType,
-  sectionIntegrationType,
-  sectionSubPageType,
+  blockText,
+  blockMedia,
+  blockCard,
+  blockQuote,
+  blockCallout,
+  blockIntegration,
+  sectionType,
 } from './sections'
+import {artifactType} from './artifact'
+import {contractTypeType} from './contractType'
+import {experienceType} from './experience'
 import {projectType} from './project'
 
 export const schemaTypes = [
@@ -17,12 +22,17 @@ export const schemaTypes = [
   roleType,
   organisationType,
   personType,
-  // Section object types
-  sectionTextType,
-  sectionImagesType,
-  sectionVideoType,
-  sectionIntegrationType,
-  sectionSubPageType,
+  // Block object types
+  blockText,
+  blockMedia,
+  blockCard,
+  blockQuote,
+  blockCallout,
+  blockIntegration,
+  sectionType,
   // Documents
+  artifactType,
+  contractTypeType,
+  experienceType,
   projectType,
 ]

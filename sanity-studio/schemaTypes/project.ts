@@ -1,5 +1,5 @@
 import {createElement} from 'react'
-import {defineField, defineType} from 'sanity'
+import {defineArrayMember, defineField, defineType} from 'sanity'
 import {orderRankField} from '@sanity/orderable-document-list'
 
 export const projectType = defineType({
@@ -126,16 +126,10 @@ export const projectType = defineType({
       type: 'url',
     }),
     defineField({
-      name: 'sections',
+      name: 'content',
       title: 'Content',
       type: 'array',
-      of: [
-        {type: 'sectionText'},
-        {type: 'sectionImages'},
-        {type: 'sectionVideo'},
-        {type: 'sectionIntegration'},
-        {type: 'sectionSubPage'},
-      ],
+      of: [defineArrayMember({type: 'section'})],
     }),
   ],
 })

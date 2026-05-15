@@ -25,16 +25,34 @@ export type ProjectListItem = {
   organisation: { name: string; logoUrl: string | null } | null;
 };
 
-const sectionFields = `
+const contentBlockFields = `
   _type,
   _key,
-  heading,
   body,
-  "images": images[]{ _key, "url": image.asset->url, caption, alt },
-  url,
-  "fileUrl": file.asset->url,
+  "items": items[] {
+    _key,
+    mediaType,
+    "imageUrl": image.asset->url,
+    "imageAlt": image.alt,
+    "videoFileUrl": videoFile.asset->url,
+    videoUrl,
+    caption,
+    icon,
+    value,
+    unit,
+    title,
+    description,
+    color
+  },
+  quote,
+  author,
+  authorRole,
+  "avatarUrl": avatar.asset->url,
+  variant,
+  title,
   provider,
-  embedCode
+  url,
+  caption
 `;
 
 export const projectDetailQuery = defineQuery(`
@@ -54,62 +72,92 @@ export const projectDetailQuery = defineQuery(`
       "roles": roles[]->{ _id, name, color, icon }
     },
     redirectUrl,
-    "sections": sections[] {
-      ${sectionFields},
-      "sections": sections[]{ ${sectionFields} }
+    "content": content[] {
+      _key,
+      title,
+      "blocks": blocks[] {
+        ${contentBlockFields}
+      }
     }
   }
 `);
 
-export type SectionText = {
-  _type: "sectionText";
+export type BlockText = {
+  _type: "blockText";
   _key: string;
-  heading?: string | null;
-  body?: unknown[] | null;
+  body: unknown[] | null;
 };
 
-export type SectionImages = {
-  _type: "sectionImages";
+export type MediaItem = {
   _key: string;
-  heading?: string | null;
-  images?: Array<{
-    _key: string;
-    url: string | null;
-    caption?: string | null;
-    alt?: string | null;
-  }> | null;
+  mediaType: "image" | "video" | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  videoFileUrl: string | null;
+  videoUrl: string | null;
+  caption: string | null;
 };
 
-export type SectionVideo = {
-  _type: "sectionVideo";
+export type BlockMedia = {
+  _type: "blockMedia";
   _key: string;
-  heading?: string | null;
-  url?: string | null;
-  fileUrl?: string | null;
+  items: MediaItem[] | null;
 };
 
-export type SectionIntegration = {
-  _type: "sectionIntegration";
+export type CardItem = {
   _key: string;
-  heading?: string | null;
-  provider?: string | null;
-  url?: string | null;
-  embedCode?: string | null;
+  icon: string | null;
+  value: string | null;
+  unit: string | null;
+  title: string | null;
+  description: string | null;
+  color: string | null;
 };
 
-export type SectionSubPage = {
-  _type: "sectionSubPage";
+export type BlockCard = {
+  _type: "blockCard";
   _key: string;
-  heading?: string | null;
-  sections?: Array<SectionText | SectionImages | SectionVideo | SectionIntegration> | null;
+  items: CardItem[] | null;
 };
 
-export type Section =
-  | SectionText
-  | SectionImages
-  | SectionVideo
-  | SectionIntegration
-  | SectionSubPage;
+export type BlockQuote = {
+  _type: "blockQuote";
+  _key: string;
+  quote: string;
+  author: string | null;
+  authorRole: string | null;
+  avatarUrl: string | null;
+};
+
+export type BlockCallout = {
+  _type: "blockCallout";
+  _key: string;
+  variant: "insight" | "warning" | "tip" | "result" | null;
+  title: string | null;
+  body: string | null;
+};
+
+export type BlockIntegration = {
+  _type: "blockIntegration";
+  _key: string;
+  provider: "figma" | "youtube" | "vimeo" | "lottie" | "codesandbox" | "other" | null;
+  url: string | null;
+  caption: string | null;
+};
+
+export type Block =
+  | BlockText
+  | BlockMedia
+  | BlockCard
+  | BlockQuote
+  | BlockCallout
+  | BlockIntegration;
+
+export type ContentSection = {
+  _key: string;
+  title: string;
+  blocks: Block[] | null;
+};
 
 export type ProjectDetail = {
   _id: string;
@@ -133,7 +181,7 @@ export type ProjectDetail = {
     roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   }> | null;
   redirectUrl: string | null;
-  sections: Section[] | null;
+  content: ContentSection[] | null;
 };
 
 export const allProjectSlugsQuery = defineQuery(`
