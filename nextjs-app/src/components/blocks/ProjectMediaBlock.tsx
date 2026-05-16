@@ -10,7 +10,7 @@ export function ProjectMediaBlock({
   title: string;
 }) {
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
+    <div className="relative aspect-video w-full overflow-hidden rounded-4xl bg-muted">
       {isVideo ? (
         <video
           src={url}

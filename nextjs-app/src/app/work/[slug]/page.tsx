@@ -8,14 +8,14 @@ import {
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import { formatMonth, calcDuration } from "@/lib/date-utils";
 import { Tag } from "@/components/primitives/Tag";
-import { Role } from "@/components/primitives/Role";
+import { RoleBlock } from "@/components/primitives/RoleBlock";
 import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
 import { ContentRenderer } from "@/components/blocks/ContentRenderer";
 import { ProjectPageClient } from "./ProjectPageClient";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Separator } from "@/components/ui/Separator";
 import {
-  CapIcon,
   UserMultipleIcon,
   Calendar02Icon,
   Clock04Icon,
@@ -45,8 +45,11 @@ export default async function ProjectPage({
   const isVideo = isVideoRef(project.thumbnailRef);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-16 sm:pb-64">
-      <ProjectPageClient title={project.title} redirectUrl={project.redirectUrl} />
+    <main className="mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-16 sm:pb-64">
+      <ProjectPageClient
+        title={project.title}
+        redirectUrl={project.redirectUrl}
+      />
       <div className="px-12 py-12">
         <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
@@ -93,30 +96,15 @@ export default async function ProjectPage({
       )}
 
       {/* Metadata sections below media */}
-      <div className="px-12 py-12 flex flex-wrap gap-20">
+      <div className="px-12 py-12 flex flex-wrap gap-12">
         {/* Role */}
         {project.roles && project.roles.length > 0 && (
-          <div>
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
-              <HugeiconsIcon icon={CapIcon} size={12} strokeWidth={2} />
-              role
-            </div>
-            <div className="flex flex-wrap gap-1 max-w-[320]">
-              {project.roles.map((role, i) => (
-                <Role
-                  key={role._id}
-                  name={role.name}
-                  icon={role.icon}
-                  comma={i < project.roles!.length - 1}
-                />
-              ))}
-            </div>
-          </div>
+          <RoleBlock roles={project.roles} />
         )}
 
         {/* Mates */}
         {project.mates && project.mates.length > 0 && (
-          <div>
+          <div className="shrink-0">
             <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-2">
               <HugeiconsIcon
                 icon={UserMultipleIcon}
@@ -131,12 +119,12 @@ export default async function ProjectPage({
 
         {/* Timeline */}
         {project.startDate && (
-          <div>
+          <div className="shrink-0">
             <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
               <HugeiconsIcon icon={Calendar02Icon} size={12} strokeWidth={2} />
               timeline
             </div>
-            <p className="text-lg font-semibold text-zinc-700">
+            <p className="text-lg font-semibold text-zinc-700 whitespace-nowrap">
               {(() => {
                 const start = formatMonth(project.startDate!);
                 const end = project.endDate
@@ -157,17 +145,19 @@ export default async function ProjectPage({
 
         {/* Duration */}
         {project.startDate && (
-          <div>
+          <div className="shrink-0">
             <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
               <HugeiconsIcon icon={Clock04Icon} size={12} strokeWidth={2} />
               duration
             </div>
-            <p className="text-lg font-semibold text-zinc-700">
+            <p className="text-lg font-semibold text-zinc-700 whitespace-nowrap">
               {calcDuration(project.startDate, project.endDate)}
             </p>
           </div>
         )}
       </div>
+
+      <Separator className="" />
 
       {/* Content sections */}
       <div className="px-12 mt-4">

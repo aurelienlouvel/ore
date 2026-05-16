@@ -34,6 +34,8 @@ const contentBlockFields = `
     mediaType,
     "imageUrl": image.asset->url,
     "imageAlt": image.alt,
+    "imageWidth": image.asset->metadata.dimensions.width,
+    "imageHeight": image.asset->metadata.dimensions.height,
     "videoFileUrl": videoFile.asset->url,
     videoUrl,
     caption,
@@ -93,6 +95,8 @@ export type MediaItem = {
   mediaType: "image" | "video" | null;
   imageUrl: string | null;
   imageAlt: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
   videoFileUrl: string | null;
   videoUrl: string | null;
   caption: string | null;

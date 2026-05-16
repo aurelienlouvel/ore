@@ -158,22 +158,58 @@
 }
 
 h1 {
-  --font-wght: 640;
   font-size: var(--text-6xl);
   font-weight: 640;
+  --font-wght: 640;
   line-height: var(--text-6xl--line-height);
   letter-spacing: var(--tracking-tight);
-  color: var(--text-zinc-800);
+  color: var(--color-zinc-800);
+}
+
+h2 {
+  font-size: var(--text-xl);
+  font-weight: 640;
+  --font-wght: 640;
+  line-height: var(--text-xl--line-height);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-zinc-400);
+}
+
+.text-block {
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl--line-height);
+  --font-wght: 500;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-zinc-800);
+  /*max-width: 800px;*/
 }
 
 @layer utilities {
-  .font-thin     { --font-wght: 100; }
-  .font-extralight { --font-wght: 200; }
-  .font-light    { --font-wght: 300; }
-  .font-normal   { --font-wght: 400; }
-  .font-medium   { --font-wght: 500; }
-  .font-semibold { --font-wght: 600; }
-  .font-bold     { --font-wght: 700; }
-  .font-extrabold { --font-wght: 800; }
-  .font-black    { --font-wght: 900; }
+  .font-thin {
+    --font-wght: 100;
+  }
+  .font-extralight {
+    --font-wght: 200;
+  }
+  .font-light {
+    --font-wght: 300;
+  }
+  .font-normal {
+    --font-wght: 400;
+  }
+  .font-medium {
+    --font-wght: 500;
+  }
+  .font-semibold {
+    --font-wght: 600;
+  }
+  .font-bold {
+    --font-wght: 700;
+  }
+  .font-extrabold {
+    --font-wght: 800;
+  }
+  .font-black {
+    --font-wght: 900;
+  }
 }
