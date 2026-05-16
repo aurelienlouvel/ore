@@ -77,6 +77,7 @@ export const projectDetailQuery = defineQuery(`
     "content": content[] {
       _key,
       title,
+      icon,
       "blocks": blocks[] {
         ${contentBlockFields}
       }
@@ -160,6 +161,7 @@ export type Block =
 export type ContentSection = {
   _key: string;
   title: string;
+  icon: string | null;
   blocks: Block[] | null;
 };
 

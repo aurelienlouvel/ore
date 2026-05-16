@@ -8,7 +8,7 @@ import {
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import { formatMonth, calcDuration } from "@/lib/date-utils";
 import { Tag } from "@/components/primitives/Tag";
-import { RoleBlock } from "@/components/primitives/RoleBlock";
+import { RoleBlock } from "@/components/blocks/RoleBlock";
 import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
 import { ContentRenderer } from "@/components/blocks/ContentRenderer";

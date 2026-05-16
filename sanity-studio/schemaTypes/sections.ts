@@ -354,6 +354,12 @@ export const sectionType = defineType({
   },
   fields: [
     defineField({
+      name: 'icon',
+      title: 'Icon',
+      type: 'string',
+      components: {input: IconInput},
+    }),
+    defineField({
       name: 'title',
       title: 'Title',
       type: 'string',
