@@ -45,12 +45,12 @@ export default async function ProjectPage({
   const isVideo = isVideoRef(project.thumbnailRef);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-16 sm:pb-64">
+    <main className="mx-auto max-w-5xl pt-4 sm:pt-16 sm:pb-64">
       <ProjectPageClient
         title={project.title}
         redirectUrl={project.redirectUrl}
       />
-      <div className="px-12 py-12">
+      <div className="px-16 py-12">
         <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
         <div className="flex flex-row items-center gap-4 px-1.5">
@@ -96,7 +96,7 @@ export default async function ProjectPage({
       )}
 
       {/* Metadata sections below media */}
-      <div className="px-12 py-12 flex flex-wrap gap-12">
+      <div className="px-16 py-12 flex flex-wrap gap-12">
         {/* Role */}
         {project.roles && project.roles.length > 0 && (
           <RoleBlock roles={project.roles} />

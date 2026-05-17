@@ -119,7 +119,7 @@ export type CardItem = {
   value: string | null;
   unit: string | null;
   title: string | null;
-  description: string | null;
+  description: unknown[] | null; // portable text (bold/italic)
   color: string | null;
 };
 
@@ -127,6 +127,7 @@ export type BlockCard = {
   _type: "blockCard";
   _key: string;
   items: CardItem[] | null;
+  caption: string | null;
 };
 
 export type BlockQuote = {

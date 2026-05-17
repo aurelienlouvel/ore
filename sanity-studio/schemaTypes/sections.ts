@@ -227,8 +227,21 @@ export const blockCard = defineType({
             defineField({
               name: 'description',
               title: 'Description',
-              type: 'text',
-              rows: 3,
+              type: 'array',
+              of: [
+                defineArrayMember({
+                  type: 'block',
+                  styles: [{title: 'Normal', value: 'normal'}],
+                  lists: [],
+                  marks: {
+                    decorators: [
+                      {title: 'Strong', value: 'strong'},
+                      {title: 'Emphasis', value: 'em'},
+                    ],
+                    annotations: [],
+                  },
+                }),
+              ],
             }),
             defineField({
               name: 'color',
@@ -240,6 +253,7 @@ export const blockCard = defineType({
         }),
       ],
     }),
+    defineField({name: 'caption', title: 'Caption', type: 'string'}),
   ],
 })
 

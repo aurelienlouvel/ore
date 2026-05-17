@@ -149,10 +149,7 @@ function SingleLayout({ item }: { item: MediaItem }) {
       : "16/9";
   return (
     <figure>
-      <div
-        className="overflow-hidden rounded-2xl"
-        style={{ aspectRatio: ar }}
-      >
+      <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: ar }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.imageUrl}
@@ -179,7 +176,10 @@ function EmbedCell({ item }: { item: MediaItem }) {
   switch (provider) {
     case "figma": {
       const isProto = item.embedUrl.includes("/proto/");
-      const params = new URLSearchParams({ embed_host: "share", url: item.embedUrl });
+      const params = new URLSearchParams({
+        embed_host: "share",
+        url: item.embedUrl,
+      });
       params.set("hide-ui", "1");
       if (isProto) params.set("scaling", "scale-down-width");
       src = `https://www.figma.com/embed?${params.toString()}`;
@@ -205,11 +205,13 @@ function EmbedCell({ item }: { item: MediaItem }) {
   return (
     <figure>
       {src ? (
-        <div className="relative aspect-video overflow-hidden rounded-2xl border border-border">
+        <div className="relative aspect-video overflow-hidden rounded-4xl border border-border">
           <iframe
             src={src}
             className="absolute inset-0 w-full"
-            style={isFigma ? { height: "calc(100% + 48px)" } : { height: "100%" }}
+            style={
+              isFigma ? { height: "calc(100% + 48px)" } : { height: "100%" }
+            }
             allow="fullscreen"
             allowFullScreen
             loading="lazy"
@@ -245,13 +247,7 @@ function EmbedCell({ item }: { item: MediaItem }) {
 //    w1 = W - GAP - w2
 //    h  = w1 / r1
 //
-function DuoLayout({
-  items,
-  W,
-}: {
-  items: [MediaItem, MediaItem];
-  W: number;
-}) {
+function DuoLayout({ items, W }: { items: [MediaItem, MediaItem]; W: number }) {
   const r1 = nativeRatio(items[0]);
   const r2 = nativeRatio(items[1]);
   const w2 = ((W - GAP) * r2) / (r1 + r2);
