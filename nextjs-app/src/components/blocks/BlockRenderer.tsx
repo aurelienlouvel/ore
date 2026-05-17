@@ -9,15 +9,15 @@ import { IntegrationBlock } from "./IntegrationBlock";
 export function BlockRenderer({ block }: { block: Block }) {
   switch (block._type) {
     case "blockText":
-      return <TextBlock block={block} />;
+      return <div className="px-12"><TextBlock block={block} /></div>;
     case "blockMedia":
       return <MediaBlock block={block} />;
     case "blockCard":
-      return <CardBlock block={block} />;
+      return <div className="px-12"><CardBlock block={block} /></div>;
     case "blockQuote":
-      return <QuoteBlock block={block} />;
+      return <div className="px-12"><QuoteBlock block={block} /></div>;
     case "blockCallout":
-      return <CalloutBlock block={block} />;
+      return <div className="px-12"><CalloutBlock block={block} /></div>;
     case "blockIntegration":
       return <IntegrationBlock block={block} />;
     default:

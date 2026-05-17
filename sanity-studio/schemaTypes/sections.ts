@@ -97,10 +97,10 @@ export const blockMedia = defineType({
               caption?: string
             }) {
               return {
-                title: mediaType === 'video' ? 'Video' : 'Image',
+                title: mediaType === 'video' ? 'Video' : mediaType === 'embed' ? 'Embed' : 'Image',
                 subtitle: caption,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                media: mediaType !== 'video' ? (image as any) : undefined,
+                media: mediaType !== 'video' && mediaType !== 'embed' ? (image as any) : undefined,
               }
             },
           },
@@ -113,6 +113,7 @@ export const blockMedia = defineType({
                 list: [
                   {title: 'Image', value: 'image'},
                   {title: 'Video', value: 'video'},
+                  {title: 'Embed', value: 'embed'},
                 ],
                 layout: 'radio',
               },
@@ -140,6 +141,29 @@ export const blockMedia = defineType({
               type: 'url',
               description: 'YouTube, Vimeo, lien externe',
               hidden: ({parent}) => (parent as {mediaType?: string})?.mediaType !== 'video',
+            }),
+            defineField({
+              name: 'embedProvider',
+              title: 'Provider',
+              type: 'string',
+              options: {
+                list: [
+                  {title: 'Figma', value: 'figma'},
+                  {title: 'YouTube', value: 'youtube'},
+                  {title: 'Vimeo', value: 'vimeo'},
+                  {title: 'Lottie', value: 'lottie'},
+                  {title: 'CodeSandbox', value: 'codesandbox'},
+                  {title: 'Other', value: 'other'},
+                ],
+                layout: 'radio',
+              },
+              hidden: ({parent}) => (parent as {mediaType?: string})?.mediaType !== 'embed',
+            }),
+            defineField({
+              name: 'embedUrl',
+              title: 'URL',
+              type: 'url',
+              hidden: ({parent}) => (parent as {mediaType?: string})?.mediaType !== 'embed',
             }),
             defineField({name: 'caption', title: 'Caption', type: 'string'}),
           ],
@@ -376,7 +400,6 @@ export const sectionType = defineType({
         defineArrayMember({type: 'blockCard'}),
         defineArrayMember({type: 'blockQuote'}),
         defineArrayMember({type: 'blockCallout'}),
-        defineArrayMember({type: 'blockIntegration'}),
       ],
     }),
   ],

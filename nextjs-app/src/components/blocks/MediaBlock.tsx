@@ -169,6 +169,71 @@ function SingleLayout({ item }: { item: MediaItem }) {
   );
 }
 
+// ─── Embed item (Figma, YouTube, Vimeo, etc.) ─────────────────────────────
+function EmbedCell({ item }: { item: MediaItem }) {
+  if (!item.embedUrl || !item.embedProvider) return null;
+  const provider = item.embedProvider;
+  const isFigma = provider === "figma";
+
+  let src: string | null = null;
+  switch (provider) {
+    case "figma": {
+      const isProto = item.embedUrl.includes("/proto/");
+      const params = new URLSearchParams({ embed_host: "share", url: item.embedUrl });
+      params.set("hide-ui", "1");
+      if (isProto) params.set("scaling", "scale-down-width");
+      src = `https://www.figma.com/embed?${params.toString()}`;
+      break;
+    }
+    case "youtube": {
+      const m = item.embedUrl.match(
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+      );
+      src = m ? `https://www.youtube.com/embed/${m[1]}` : null;
+      break;
+    }
+    case "vimeo": {
+      const m = item.embedUrl.match(/vimeo\.com\/(\d+)/);
+      src = m ? `https://player.vimeo.com/video/${m[1]}` : null;
+      break;
+    }
+    case "codesandbox":
+      src = item.embedUrl.replace("/s/", "/embed/");
+      break;
+  }
+
+  return (
+    <figure>
+      {src ? (
+        <div className="relative aspect-video overflow-hidden rounded-2xl border border-border">
+          <iframe
+            src={src}
+            className="absolute inset-0 w-full"
+            style={isFigma ? { height: "calc(100% + 48px)" } : { height: "100%" }}
+            allow="fullscreen"
+            allowFullScreen
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <a
+          href={item.embedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex text-sm text-stone-500 underline underline-offset-2"
+        >
+          {provider} ↗
+        </a>
+      )}
+      {item.caption && (
+        <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+          {item.caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 // ─── Layout 2 images — côte à côte, même hauteur ─────────────────────────────
 //
 //  Contraintes :
@@ -268,9 +333,22 @@ export function MediaBlock({ block }: { block: BlockMedia }) {
   const W = useContainerWidth(ref);
   const items = block.items ?? [];
 
+  // If any item is an embed, render all items individually (no justified math)
+  const hasEmbeds = items.some((item) => item.mediaType === "embed");
+
   return (
     <div ref={ref} className="w-full">
-      {items.length === 0 ? null : items.length === 1 ? (
+      {items.length === 0 ? null : hasEmbeds ? (
+        <div className="flex flex-col gap-4">
+          {items.map((item) =>
+            item.mediaType === "embed" ? (
+              <EmbedCell key={item._key} item={item} />
+            ) : (
+              <SingleLayout key={item._key} item={item} />
+            ),
+          )}
+        </div>
+      ) : items.length === 1 ? (
         // 1 item — pas besoin de W, CSS pur
         <SingleLayout item={items[0]} />
       ) : !W ? (

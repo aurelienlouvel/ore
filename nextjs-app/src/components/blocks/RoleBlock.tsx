@@ -49,7 +49,7 @@ export function RoleBlock({ roles }: { roles: RoleItem[] }) {
 
   return (
     <div style={width !== null ? { width } : undefined}>
-      <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+      <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
         <HugeiconsIcon icon={CapIcon} size={12} strokeWidth={2} />
         {roles.length > 1 ? "roles" : "role"}
       </div>

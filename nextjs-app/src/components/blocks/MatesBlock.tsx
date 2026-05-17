@@ -95,7 +95,7 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
                   }}
                   transition={SPRING}
                 >
-                  <p className="text-lg font-semibold text-zinc-900 whitespace-nowrap text-center">
+                  <p className="text-lg font-semibold text-stone-900 whitespace-nowrap text-center">
                     {person.firstName} {person.lastName}
                   </p>
                   {(roles ?? []).map((role, ri) => (
@@ -104,7 +104,7 @@ export function MatesBlock({ mates }: { mates: Mate[] }) {
                       style={{
                         rotate: `${(Math.abs(seededRotation(role._id)) * 0.3 * (ri % 2 === 0 ? 1 : -1)).toFixed(1)}deg`,
                       }}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap${role.color ? ` bg-${role.color}-100 text-${role.color}-950` : " bg-zinc-100 text-zinc-900"}`}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap${role.color ? ` bg-${role.color}-100 text-${role.color}-950` : " bg-stone-100 text-stone-900"}`}
                     >
                       {role.icon && (
                         <Icon name={role.icon} size={10} strokeWidth={2} />

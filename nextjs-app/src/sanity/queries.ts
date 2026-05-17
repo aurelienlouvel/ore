@@ -39,6 +39,8 @@ const contentBlockFields = `
     "videoFileUrl": videoFile.asset->url,
     videoUrl,
     caption,
+    embedProvider,
+    embedUrl,
     icon,
     value,
     unit,
@@ -93,7 +95,7 @@ export type BlockText = {
 
 export type MediaItem = {
   _key: string;
-  mediaType: "image" | "video" | null;
+  mediaType: "image" | "video" | "embed" | null;
   imageUrl: string | null;
   imageAlt: string | null;
   imageWidth: number | null;
@@ -101,6 +103,8 @@ export type MediaItem = {
   videoFileUrl: string | null;
   videoUrl: string | null;
   caption: string | null;
+  embedProvider: "figma" | "youtube" | "vimeo" | "lottie" | "codesandbox" | "other" | null;
+  embedUrl: string | null;
 };
 
 export type BlockMedia = {

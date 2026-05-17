@@ -65,7 +65,7 @@ export default async function ProjectPage({
                   className="h-6 w-6 rounded-sm object-contain"
                 />
               )}
-              <span className="text-md font-medium text-zinc-700">
+              <span className="text-md font-medium text-stone-700">
                 {project.organisation.name}
               </span>
             </div>
@@ -105,7 +105,7 @@ export default async function ProjectPage({
         {/* Mates */}
         {project.mates && project.mates.length > 0 && (
           <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-2">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-2">
               <HugeiconsIcon
                 icon={UserMultipleIcon}
                 size={12}
@@ -120,11 +120,11 @@ export default async function ProjectPage({
         {/* Timeline */}
         {project.startDate && (
           <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
               <HugeiconsIcon icon={Calendar02Icon} size={12} strokeWidth={2} />
               timeline
             </div>
-            <p className="text-lg font-semibold text-zinc-700 whitespace-nowrap">
+            <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
               {(() => {
                 const start = formatMonth(project.startDate!);
                 const end = project.endDate
@@ -134,7 +134,7 @@ export default async function ProjectPage({
                 return (
                   <>
                     {start}
-                    <span className="px-2 font-semibold text-zinc-400">→</span>
+                    <span className="px-2 font-semibold text-stone-400">→</span>
                     {end}
                   </>
                 );
@@ -146,11 +146,11 @@ export default async function ProjectPage({
         {/* Duration */}
         {project.startDate && (
           <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-zinc-400 mb-3">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
               <HugeiconsIcon icon={Clock04Icon} size={12} strokeWidth={2} />
               duration
             </div>
-            <p className="text-lg font-semibold text-zinc-700 whitespace-nowrap">
+            <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
               {calcDuration(project.startDate, project.endDate)}
             </p>
           </div>
@@ -160,7 +160,7 @@ export default async function ProjectPage({
       <Separator className="" />
 
       {/* Content sections */}
-      <div className="px-12 mt-4">
+      <div className="mt-4">
         <ContentRenderer content={project.content} />
       </div>
     </main>

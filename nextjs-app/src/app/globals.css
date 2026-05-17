@@ -163,7 +163,7 @@ h1 {
   --font-wght: 640;
   line-height: var(--text-6xl--line-height);
   letter-spacing: var(--tracking-tight);
-  color: var(--color-zinc-800);
+  color: var(--color-stone-800);
 }
 
 h2 {
@@ -172,16 +172,16 @@ h2 {
   --font-wght: 640;
   line-height: var(--text-xl--line-height);
   letter-spacing: var(--tracking-tight);
-  color: var(--color-zinc-400);
+  color: var(--color-stone-400);
 }
 
 .text-block {
   font-size: var(--text-2xl);
   line-height: var(--text-2xl--line-height);
-  --font-wght: 500;
+  font-weight: 520;
+  --font-wght: 520;
   letter-spacing: var(--tracking-tight);
-  color: var(--color-zinc-800);
-  /*max-width: 800px;*/
+  color: var(--color-stone-800);
 }
 
 @layer utilities {
