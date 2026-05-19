@@ -13,14 +13,16 @@ const ROTATIONS: Record<number, number[]> = {
 const descComponents = {
   block: {
     normal: ({ children }: { children?: React.ReactNode }) => (
-      <p className="leading-normal">{children}</p>
+      <p className="leading-[1.4] font-[580]">{children}</p>
     ),
   },
   marks: {
     strong: ({ children }: { children?: React.ReactNode }) => (
-      <strong className="font-semibold">{children}</strong>
+      <strong className="font-[680]">{children}</strong>
     ),
-    em: ({ children }: { children?: React.ReactNode }) => <em>{children}</em>,
+    em: ({ children }: { children?: React.ReactNode }) => (
+      <em className="font-[480]">{children}</em>
+    ),
   },
 };
 
@@ -29,16 +31,23 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
   return (
     <div
-      className={`bg-${c}-100 border-2 border-${c}-200 rounded-3xl gap-2 p-8 flex flex-col w-fit max-w-120`}
+      className={`bg-gradient-to-b from-${c}-50 to-${c}-100 border border-${c}-200 rounded-3xl gap-2 p-8 flex flex-col w-fit max-w-120`}
+      style={{
+        boxShadow:
+          "inset 0 0 0 4px rgba(255,255,255,0.5), 0 2px 6px rgba(80,70,60,0.07), 0 6px 20px rgba(80,70,60,0.05)",
+        isolation: "isolate",
+      }}
     >
       {item.icon && (
-        <div className={`mb-4 text-${c}-600 opacity-60`}>
-          <Icon name={item.icon} size={64} strokeWidth={1.6} />
+        <div className={`mb-2 text-${c}-600 mix-blend-multiply opacity-30`}>
+          <Icon name={item.icon} size={48} strokeWidth={1.6} />
         </div>
       )}
 
       {(item.value || item.unit) && (
-        <div className={`flex items-baseline gap-1 text-${c}-600`}>
+        <div
+          className={`flex items-baseline gap-1 text-${c}-800 mix-blend-multiply`}
+        >
           {item.value && (
             <span className="text-3xl font-bold tracking-tight">
               {item.value}
@@ -51,13 +60,17 @@ function CardItemComponent({ item }: { item: CardItem }) {
       )}
 
       {item.title && (
-        <p className={`text-xl font-semibold text-${c}-600 opacity-60`}>
+        <p
+          className={`text-2xl font-semibold text-${c}-600 mix-blend-multiply opacity-80`}
+        >
           {item.title}
         </p>
       )}
 
       {item.description && (
-        <div className={`text-base text-${c}-800 space-y-2`}>
+        <div
+          className={`text-md font-[200] text-${c}-700 space-y-2 mix-blend-multiply opacity-60`}
+        >
           <PortableText
             value={
               item.description as Parameters<typeof PortableText>[0]["value"]
