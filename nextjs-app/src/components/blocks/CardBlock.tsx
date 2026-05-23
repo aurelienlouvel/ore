@@ -102,8 +102,8 @@ export function CardBlock({ block }: { block: BlockCard }) {
   const rotations = ROTATIONS[n] ?? ROTATIONS[3];
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="flex items-center justify-center gap-6">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-start gap-6 w-full max-w-4xl">
         {items.map((item, i) => (
           <div
             key={item._key}
