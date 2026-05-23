@@ -81,7 +81,7 @@ function MediaCell({
           />
         ) : null}
         {item.caption && (
-          <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+          <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
             {item.caption}
           </figcaption>
         )}
@@ -101,7 +101,7 @@ function MediaCell({
         />
       </div>
       {item.caption && (
-        <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+        <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
           {item.caption}
         </figcaption>
       )}
@@ -134,7 +134,7 @@ function SingleLayout({ item }: { item: MediaItem }) {
           />
         ) : null}
         {item.caption && (
-          <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+          <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
             {item.caption}
           </figcaption>
         )}
@@ -158,7 +158,7 @@ function SingleLayout({ item }: { item: MediaItem }) {
         />
       </div>
       {item.caption && (
-        <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+        <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
           {item.caption}
         </figcaption>
       )}
@@ -228,7 +228,7 @@ function EmbedCell({ item }: { item: MediaItem }) {
         </a>
       )}
       {item.caption && (
-        <figcaption className="mt-2 text-xs text-muted-foreground px-1">
+        <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
           {item.caption}
         </figcaption>
       )}

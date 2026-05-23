@@ -6,14 +6,15 @@ import { Icon } from "@/components/primitives/Icon";
 
 const ROTATIONS: Record<number, number[]> = {
   1: [0],
-  2: [-1.5, 1.5],
-  3: [-2.5, 0.5, 2],
+  2: [-1, 1],
+  3: [-1.5, 0, 1.5],
 };
 
 const descComponents = {
   block: {
+    // Chaque bloc = une ligne — Enter dans Sanity = saut de ligne visuel
     normal: ({ children }: { children?: React.ReactNode }) => (
-      <p className="leading-[1.4] font-[580]">{children}</p>
+      <span className="block leading-[1.4] font-[580]">{children}</span>
     ),
   },
   marks: {
@@ -31,7 +32,13 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
   return (
     <div
-      className={`bg-gradient-to-b from-${c}-50 to-${c}-100 border border-${c}-200 rounded-3xl gap-2 p-8 flex flex-col w-fit max-w-120`}
+      className={`
+        w-fit
+        bg-gradient-to-b from-${c}-50 to-${c}-100
+        border border-${c}-200
+        rounded-3xl p-8
+        flex flex-col gap-2
+      `}
       style={{
         boxShadow:
           "inset 0 0 0 4px rgba(255,255,255,0.5), 0 2px 6px rgba(80,70,60,0.07), 0 6px 20px rgba(80,70,60,0.05)",
@@ -46,15 +53,15 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
       {(item.value || item.unit) && (
         <div
-          className={`flex items-baseline gap-1 text-${c}-800 mix-blend-multiply`}
+          className={`flex items-baseline gap-2 text-${c}-600 mix-blend-multiply`}
         >
           {item.value && (
-            <span className="text-3xl font-bold tracking-tight">
+            <span className="text-4xl font-bold tracking-tight opacity-80">
               {item.value}
             </span>
           )}
           {item.unit && (
-            <span className="text-sm font-medium opacity-60">{item.unit}</span>
+            <span className="text-md font-medium opacity-60">{item.unit}</span>
           )}
         </div>
       )}
@@ -63,13 +70,17 @@ function CardItemComponent({ item }: { item: CardItem }) {
         <p
           className={`text-2xl font-semibold text-${c}-600 mix-blend-multiply opacity-80`}
         >
-          {item.title}
+          {item.title.split("\n").map((line, i) => (
+            <span key={i} className="block">
+              {line}
+            </span>
+          ))}
         </p>
       )}
 
       {item.description && (
         <div
-          className={`text-md font-[200] text-${c}-700 space-y-2 mix-blend-multiply opacity-60`}
+          className={`text-md font-[200] text-${c}-700 mix-blend-multiply opacity-60`}
         >
           <PortableText
             value={
@@ -92,13 +103,12 @@ export function CardBlock({ block }: { block: BlockCard }) {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="flex justify-center items-end gap-8">
+      <div className="flex items-center justify-center gap-6">
         {items.map((item, i) => (
           <div
             key={item._key}
             style={{
               transform: `rotate(${rotations[i % rotations.length]}deg)`,
-              zIndex: i + 1,
             }}
             className="relative"
           >

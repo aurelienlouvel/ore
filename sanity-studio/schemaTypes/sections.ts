@@ -223,7 +223,7 @@ export const blockCard = defineType({
             }),
             defineField({name: 'value', title: 'Data — Value', type: 'string'}),
             defineField({name: 'unit', title: 'Data — Unit', type: 'string'}),
-            defineField({name: 'title', title: 'Title', type: 'string'}),
+            defineField({name: 'title', title: 'Title', type: 'text', rows: 3}),
             defineField({
               name: 'description',
               title: 'Description',
