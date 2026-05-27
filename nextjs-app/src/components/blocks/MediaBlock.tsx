@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import type { BlockMedia, MediaItem } from "@/sanity/queries";
+import { buildImageUrl, hotspotToObjectPosition } from "@/lib/sanity-image";
 
 // ─── Gap (px) ─────────────────────────────────────────────────────────────────
 const GAP = 16;
@@ -75,13 +76,16 @@ function MediaCell({
           // eslint-disable-next-line jsx-a11y/media-has-caption
           <video
             src={item.videoFileUrl}
-            controls
+            autoPlay
+            muted
+            loop
+            playsInline
             className="w-full rounded-2xl"
             style={containerStyle}
           />
         ) : null}
         {item.caption && (
-          <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
+          <figcaption className="mt-4 text-sm text-stone-600 text-center px-1">
             {item.caption}
           </figcaption>
         )}
@@ -89,15 +93,16 @@ function MediaCell({
     );
   }
 
-  if (!item.imageUrl) return null;
+  if (!item.imageUrl && !item.imageRef) return null;
   return (
     <figure>
       <div className="overflow-hidden rounded-2xl" style={containerStyle}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.imageUrl}
+          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop) : (item.imageUrl ?? "")}
           alt={item.imageAlt ?? ""}
           className="w-full h-full object-cover block"
+          style={{ objectPosition: hotspotToObjectPosition(item.imageHotspot) }}
         />
       </div>
       {item.caption && (
@@ -129,12 +134,15 @@ function SingleLayout({ item }: { item: MediaItem }) {
           // eslint-disable-next-line jsx-a11y/media-has-caption
           <video
             src={item.videoFileUrl}
-            controls
+            autoPlay
+            muted
+            loop
+            playsInline
             className="w-full rounded-2xl"
           />
         ) : null}
         {item.caption && (
-          <figcaption className="mt-2 text-sm text-stone-600 text-center px-1">
+          <figcaption className="mt-4 text-sm text-stone-600 text-center px-1">
             {item.caption}
           </figcaption>
         )}
@@ -142,19 +150,16 @@ function SingleLayout({ item }: { item: MediaItem }) {
     );
   }
 
-  if (!item.imageUrl) return null;
-  const ar =
-    item.imageWidth && item.imageHeight
-      ? `${item.imageWidth}/${item.imageHeight}`
-      : "16/9";
+  if (!item.imageUrl && !item.imageRef) return null;
   return (
     <figure>
-      <div className="overflow-hidden rounded-2xl" style={{ aspectRatio: ar }}>
+      <div className="overflow-hidden rounded-2xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.imageUrl}
+          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop) : (item.imageUrl ?? "")}
           alt={item.imageAlt ?? ""}
-          className="w-full h-full object-cover block"
+          className="w-full block"
+          style={{ objectPosition: hotspotToObjectPosition(item.imageHotspot) }}
         />
       </div>
       {item.caption && (

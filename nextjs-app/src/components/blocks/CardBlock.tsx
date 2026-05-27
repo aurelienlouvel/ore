@@ -1,5 +1,6 @@
 "use client"; // required for PortableText
 
+import { useRef, useLayoutEffect } from "react";
 import { PortableText } from "@portabletext/react";
 import type { BlockCard, CardItem } from "@/sanity/queries";
 import { Icon } from "@/components/primitives/Icon";
@@ -68,7 +69,7 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
       {item.title && (
         <p
-          className={`text-2xl font-semibold text-${c}-600 mix-blend-multiply opacity-80`}
+          className={`text-2xl font-semibold text-${c}-600 mix-blend-multiply opacity-80 whitespace-nowrap`}
         >
           {item.title.split("\n").map((line, i) => (
             <span key={i} className="block">
@@ -80,7 +81,7 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
       {item.description && (
         <div
-          className={`text-md font-[200] text-${c}-700 mix-blend-multiply opacity-60`}
+          className={`text-md font-[200] text-${c}-700 mix-blend-multiply opacity-60 whitespace-nowrap`}
         >
           <PortableText
             value={
@@ -100,15 +101,36 @@ export function CardBlock({ block }: { block: BlockCard }) {
 
   const n = Math.min(items.length, 3);
   const rotations = ROTATIONS[n] ?? ROTATIONS[3];
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row || n <= 1) return;
+
+    const update = () => {
+      const wrappers = Array.from(row.children) as HTMLElement[];
+      // Reset margins pour mesurer les largeurs naturelles
+      wrappers.forEach((w, i) => { w.style.marginLeft = i === 0 ? "0" : "0"; });
+      const totalCards = wrappers.reduce((sum, w) => sum + w.offsetWidth, 0);
+      const available = row.offsetWidth;
+      const gap = Math.min(24, (available - totalCards) / (n - 1));
+      wrappers.forEach((w, i) => { if (i > 0) w.style.marginLeft = `${gap}px`; });
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [n]);
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-start gap-6 w-full max-w-4xl">
+      <div ref={rowRef} className="flex items-center justify-start w-full">
         {items.map((item, i) => (
           <div
             key={item._key}
             style={{
               transform: `rotate(${rotations[i % rotations.length]}deg)`,
+              zIndex: i + 1,
             }}
             className="relative"
           >

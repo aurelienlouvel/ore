@@ -33,9 +33,12 @@ const contentBlockFields = `
     _key,
     mediaType,
     "imageUrl": image.asset->url,
+    "imageRef": image.asset._ref,
     "imageAlt": image.alt,
     "imageWidth": image.asset->metadata.dimensions.width,
     "imageHeight": image.asset->metadata.dimensions.height,
+    "imageHotspot": image.hotspot,
+    "imageCrop": image.crop,
     "videoFileUrl": videoFile.asset->url,
     videoUrl,
     caption,
@@ -97,9 +100,12 @@ export type MediaItem = {
   _key: string;
   mediaType: "image" | "video" | "embed" | null;
   imageUrl: string | null;
+  imageRef: string | null;
   imageAlt: string | null;
   imageWidth: number | null;
   imageHeight: number | null;
+  imageHotspot: { x: number; y: number; width: number; height: number } | null;
+  imageCrop: { top: number; bottom: number; left: number; right: number } | null;
   videoFileUrl: string | null;
   videoUrl: string | null;
   caption: string | null;
@@ -198,3 +204,51 @@ export type ProjectDetail = {
 export const allProjectSlugsQuery = defineQuery(`
   *[_type == "project"] { "slug": slug.current }
 `);
+
+// ─── Artifacts (Play page canvas) ─────────────────────────────────────────────
+
+export const artifactsCanvasQuery = defineQuery(`
+  *[_type == "artifact"] | order(orderRank) {
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+    "firstMedia": gallery[0] {
+      _type,
+      "imageUrl": image.asset->url,
+      "imageRef": image.asset._ref,
+      "imageWidth": image.asset->metadata.dimensions.width,
+      "imageHeight": image.asset->metadata.dimensions.height,
+      "imageHotspot": image.hotspot,
+      "imageCrop": image.crop,
+      "videoFileUrl": file.asset->url,
+      "videoUrl": url
+    },
+    "tags": tags[]->{ _id, name, color, icon },
+    startDate,
+    endDate
+  }
+`);
+
+export type ArtifactFirstMedia = {
+  _type: "galleryImage" | "galleryVideo";
+  imageUrl: string | null;
+  imageRef: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  imageHotspot: { x: number; y: number; width: number; height: number } | null;
+  imageCrop: { top: number; bottom: number; left: number; right: number } | null;
+  videoFileUrl: string | null;
+  videoUrl: string | null;
+};
+
+export type ArtifactCanvasItem = {
+  _id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  firstMedia: ArtifactFirstMedia | null;
+  tags: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
+  startDate: string | null;
+  endDate: string | null;
+};

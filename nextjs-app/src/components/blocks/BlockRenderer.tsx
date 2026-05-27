@@ -21,7 +21,7 @@ export function BlockRenderer({ block }: { block: Block }) {
       );
     case "blockCard":
       return (
-        <div className="py-4 px-16">
+        <div className="py-4 px-8">
           <CardBlock block={block} />
         </div>
       );
