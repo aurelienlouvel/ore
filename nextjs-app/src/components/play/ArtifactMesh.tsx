@@ -6,44 +6,48 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { buildImageUrl } from "@/lib/sanity-image";
+import { CARD_W, CARD_H, getArtifactImageUrl } from "@/lib/artifact-utils";
 
-export const CARD_W = 340;
-export const CARD_H = 250;
+// Re-export so InfiniteCanvas doesn't need to know where they live
+export { CARD_W, CARD_H, getArtifactImageUrl };
 
 // ─── Corner brackets — 4 L-shapes, sized to the actual scaled card ────────────
-const B   = 16;  // arm length
-const TH  = 1.5; // arm thickness
+const B      = 16;  // arm length
+const TH     = 1.5; // arm thickness
 const OFF    = 7;   // gap from card edge
 const RADIUS = 16;  // corner radius in world-units
 
-// ─── Rounded corners via alpha-map ────────────────────────────────────────────
-//  PlaneGeometry keeps correct texture UVs. The alpha mask clips corners only.
-//  Singleton — created once on first use, shared across all instances.
-let _roundedAlpha: THREE.Texture | null = null;
-function getRoundedAlpha(): THREE.Texture | null {
+// ─── Rounded-corner alpha map — one CanvasTexture per unique card height ──────
+//  PlaneGeometry keeps correct UVs; the alpha mask clips corners only.
+const _alphaCache = new Map<number, THREE.Texture>();
+
+function getRoundedAlpha(w: number, h: number): THREE.Texture | null {
   if (typeof document === "undefined") return null;
-  if (_roundedAlpha) return _roundedAlpha;
+  if (_alphaCache.has(h)) return _alphaCache.get(h)!;
+
   const canvas = document.createElement("canvas");
-  canvas.width  = CARD_W;
-  canvas.height = CARD_H;
+  canvas.width  = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d")!;
-  ctx.fillStyle = "#000000";            // black = transparent
-  ctx.fillRect(0, 0, CARD_W, CARD_H);
-  ctx.fillStyle = "#ffffff";            // white  = opaque
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.moveTo(RADIUS, 0);
-  ctx.lineTo(CARD_W - RADIUS, 0);
-  ctx.quadraticCurveTo(CARD_W, 0,      CARD_W, RADIUS);
-  ctx.lineTo(CARD_W, CARD_H - RADIUS);
-  ctx.quadraticCurveTo(CARD_W, CARD_H, CARD_W - RADIUS, CARD_H);
-  ctx.lineTo(RADIUS, CARD_H);
-  ctx.quadraticCurveTo(0, CARD_H,      0, CARD_H - RADIUS);
+  ctx.lineTo(w - RADIUS, 0);
+  ctx.quadraticCurveTo(w, 0,   w, RADIUS);
+  ctx.lineTo(w, h - RADIUS);
+  ctx.quadraticCurveTo(w, h,   w - RADIUS, h);
+  ctx.lineTo(RADIUS, h);
+  ctx.quadraticCurveTo(0, h,   0, h - RADIUS);
   ctx.lineTo(0, RADIUS);
-  ctx.quadraticCurveTo(0, 0,           RADIUS, 0);
+  ctx.quadraticCurveTo(0, 0,   RADIUS, 0);
   ctx.closePath();
   ctx.fill();
-  _roundedAlpha = new THREE.CanvasTexture(canvas);
-  return _roundedAlpha;
+
+  const tex = new THREE.CanvasTexture(canvas);
+  _alphaCache.set(h, tex);
+  return tex;
 }
 
 function CornerBrackets({
@@ -96,7 +100,8 @@ type SharedProps = {
   worldPos:   [number, number];
   isSelected: boolean;
   onSelect:   (point: [number, number]) => void;
-  cardScale?: number; // default 1 — drives both geometry size and bracket positions
+  cardScale?: number; // uniform size variation
+  cardH?:     number; // actual height (defaults to CARD_H)
 };
 
 // ─── Shared mesh body ─────────────────────────────────────────────────────────
@@ -106,6 +111,7 @@ function MeshBody({
   isSelected,
   onSelect,
   cardScale = 1,
+  cardH = CARD_H,
 }: SharedProps & { texture: THREE.Texture }) {
   const meshRef  = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
@@ -113,7 +119,7 @@ function MeshBody({
   const [hovered, setHovered] = useState(false);
 
   const w  = CARD_W * cardScale;
-  const h  = CARD_H * cardScale;
+  const h  = cardH  * cardScale;
   const hw = w / 2 + OFF;
   const hh = h / 2 + OFF;
 
@@ -141,7 +147,7 @@ function MeshBody({
           map={texture}
           toneMapped={false}
           transparent
-          alphaMap={getRoundedAlpha() ?? undefined}
+          alphaMap={getRoundedAlpha(CARD_W, cardH) ?? undefined}
         />
       </mesh>
       <CornerBrackets visible={hovered || isSelected} hw={hw} hh={hh} />
@@ -150,12 +156,14 @@ function MeshBody({
 }
 
 // ─── Placeholder (no media) ───────────────────────────────────────────────────
-function PlaceholderMesh({ worldPos, isSelected, onSelect, cardScale = 1 }: SharedProps) {
+function PlaceholderMesh({
+  worldPos, isSelected, onSelect, cardScale = 1, cardH = CARD_H,
+}: SharedProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
   const w  = CARD_W * cardScale;
-  const h  = CARD_H * cardScale;
+  const h  = cardH  * cardScale;
   const hw = w / 2 + OFF;
   const hh = h / 2 + OFF;
 
@@ -175,7 +183,7 @@ function PlaceholderMesh({ worldPos, isSelected, onSelect, cardScale = 1 }: Shar
         <meshBasicMaterial
           color="#e7e5e4"
           transparent
-          alphaMap={getRoundedAlpha() ?? undefined}
+          alphaMap={getRoundedAlpha(CARD_W, cardH) ?? undefined}
         />
       </mesh>
       <CornerBrackets visible={hovered || isSelected} hw={hw} hh={hh} />
@@ -197,22 +205,24 @@ function ImageMesh({ url, ...rest }: SharedProps & { url: string }) {
 export function ArtifactMesh({
   artifact,
   videoTexture,
+  cardH,
   ...rest
 }: SharedProps & {
-  artifact:     ArtifactCanvasItem;
+  artifact:      ArtifactCanvasItem;
   videoTexture?: THREE.VideoTexture;
+  cardH?:        number;
 }) {
   const m = artifact.firstMedia;
 
   if (m?._type === "galleryVideo") {
-    if (videoTexture) return <MeshBody texture={videoTexture} {...rest} />;
-    return <PlaceholderMesh {...rest} />;
+    if (videoTexture) return <MeshBody texture={videoTexture} cardH={cardH} {...rest} />;
+    return <PlaceholderMesh cardH={cardH} {...rest} />;
   }
 
   const src = m?.imageRef
     ? buildImageUrl(m.imageRef, m.imageUrl, m.imageHotspot, m.imageCrop)
     : (m?.imageUrl ?? null);
 
-  if (!src) return <PlaceholderMesh {...rest} />;
-  return <ImageMesh url={src} {...rest} />;
+  if (!src) return <PlaceholderMesh cardH={cardH} {...rest} />;
+  return <ImageMesh url={src} cardH={cardH} {...rest} />;
 }

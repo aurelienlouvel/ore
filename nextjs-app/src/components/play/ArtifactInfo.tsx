@@ -14,13 +14,11 @@ export function ArtifactInfo({ artifact }: { artifact: ArtifactCanvasItem }) {
   return (
     <div className="w-64 flex flex-col gap-3">
       {/* Title */}
-      <h2 className="text-lg font-semibold leading-snug" style={{ color: "#b45309" }}>
-        {artifact.title}
-      </h2>
+      <h3 className="leading-snug">{artifact.title}</h3>
 
       {/* Date */}
       {dateLabel && (
-        <p className="text-xs text-stone-400 font-medium">{dateLabel}</p>
+        <p className="text-md text-stone-400 font-medium">{dateLabel}</p>
       )}
 
       {/* Description */}
@@ -34,7 +32,12 @@ export function ArtifactInfo({ artifact }: { artifact: ArtifactCanvasItem }) {
       {artifact.tags && artifact.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {artifact.tags.map((tag) => (
-            <Tag key={tag._id} name={tag.name} color={tag.color} icon={tag.icon} />
+            <Tag
+              key={tag._id}
+              name={tag.name}
+              color={tag.color}
+              icon={tag.icon}
+            />
           ))}
         </div>
       )}
