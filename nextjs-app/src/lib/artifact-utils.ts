@@ -35,6 +35,28 @@ export function getCardHeight(artifact: ArtifactCanvasItem): number {
   return CARD_H;
 }
 
+// ─── Intro animation state (module-level — survives remounts / soft-navs) ──────
+//
+//  `version` increments each time the intro fires so cards can detect a new
+//  cycle even if the component never unmounted.
+//  `startTime` is performance.now() at trigger time; cards use it + their own
+//  stagger delay to compute opacity / scale.
+//
+export const introState = {
+  version:   0,
+  startTime: -Infinity as number,
+};
+
+export function triggerIntro(): void {
+  introState.version  += 1;
+  introState.startTime = typeof performance !== "undefined" ? performance.now() : 0;
+}
+
+// ─── Focus dim state ──────────────────────────────────────────────────────────
+// When a card is focused, all other cards dim toward DIM_OPACITY.
+export const focusState = { isActive: false };
+export const DIM_OPACITY = 0;
+
 /**
  * Retourne l'URL de l'image de couverture d'un artifact.
  * Importable partout (server + client), aucune dépendance browser.

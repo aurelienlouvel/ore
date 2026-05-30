@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, type MotionValue } from "motio
 import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { ArtifactMesh, CARD_W, CARD_H } from "./ArtifactMesh";
-import { getCardHeight, _videoDimsCache, MIN_CARD_H, MAX_CARD_H } from "@/lib/artifact-utils";
+import { getCardHeight, _videoDimsCache, MIN_CARD_H, MAX_CARD_H, triggerIntro } from "@/lib/artifact-utils";
 import { ArtifactInfo } from "./ArtifactInfo";
 
 // ─── Tunable params ────────────────────────────────────────────────────────────
@@ -303,18 +303,49 @@ function GridBackground({ paramsRef }: { paramsRef: React.MutableRefObject<Param
 }
 
 // ─── Camera controller ────────────────────────────────────────────────────────
+//
+//  Intro zoom : time-based easeInOutCubic over INTRO_ZOOM_DURATION ms,
+//               starting INTRO_ZOOM_DELAY ms after `active` flips true.
+//  Focus snap : position + zoom animated together on the same easeOutCubic curve
+//               so they always arrive at the same instant (no disjoint easing).
+//  Exit focus : exponential lerp on zoom only (instant-feel, no duration overhead).
+//
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+// Same family as the focusout exponential lerp — fast start, smooth cinematic settle
+function easeOutQuart(t: number): number {
+  return 1 - Math.pow(1 - t, 4);
+}
+
+const INTRO_ZOOM_DELAY    = 60;   // ms — micro delay, zoom starts with the cards
+const INTRO_ZOOM_DURATION = 1400; // ms — slow, smooth camera pull-back
+const FOCUS_DURATION      = 600;  // ms — focus snap
+// Panel appears once media is nearly stable (Framer Motion delay, not a timer)
+const PANEL_DELAY_S       = (FOCUS_DURATION * 0.75) / 1000; // seconds for Framer Motion
+
 function CameraController({
-  selectTarget, zoomTarget, focusExitRef, paramsRef,
+  selectTarget, zoomTarget, focusExitRef, paramsRef, active,
 }: {
   selectTarget: React.MutableRefObject<{ x: number; y: number } | null>;
   zoomTarget:   React.MutableRefObject<number>;
   focusExitRef: React.MutableRefObject<(() => void) | null>;
   paramsRef:    React.MutableRefObject<Params>;
+  active:       boolean;
 }) {
   const { camera } = useThree();
-  const wheel   = useRef({ x: 0, y: 0 });
-  const inFocus = useRef(false);
+  const wheel    = useRef({ x: 0, y: 0 });
+  const inFocus  = useRef(false);
+  // Time-based intro zoom animation (null = not running)
+  const zoomAnim  = useRef<{ startTime: number; fromZoom: number } | null>(null);
+  // Time-based focus animation — position + zoom synchronized on the same curve
+  const focusAnim = useRef<{
+    startTime: number;
+    fromX: number; fromY: number; toX: number; toY: number;
+    fromZoom: number; toZoom: number;
+  } | null>(null);
 
+  // Wheel → accumulate raw deltas, cancel intro zoom if still running
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -322,42 +353,110 @@ function CameraController({
         focusExitRef.current?.();
         inFocus.current = false;
       }
+      if (zoomAnim.current) {
+        zoomAnim.current   = null;   // abort intro zoom — user is already navigating
+        zoomTarget.current = 1.0;
+      }
+      focusAnim.current    = null;   // abort any in-progress focus snap
       selectTarget.current = null;
       zoomTarget.current   = 1.0;
-      wheel.current.x += e.deltaX;
-      wheel.current.y -= e.deltaY;
+      wheel.current.x     += e.deltaX;
+      wheel.current.y     -= e.deltaY;
     };
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
   }, [selectTarget, zoomTarget, focusExitRef]);
 
-  useFrame(() => {
-    const cam   = camera as THREE.OrthographicCamera;
-    const zDiff = zoomTarget.current - cam.zoom;
-    if (Math.abs(zDiff) > 0.001) {
-      cam.zoom += zDiff * 0.1;
-      cam.updateProjectionMatrix();
-    } else if (cam.zoom !== zoomTarget.current) {
-      cam.zoom = zoomTarget.current;
-      cam.updateProjectionMatrix();
+  // Intro — runs each time the canvas becomes active
+  useEffect(() => {
+    if (!active) {
+      wheel.current      = { x: 0, y: 0 };
+      zoomAnim.current   = null;
+      focusAnim.current  = null;
+      zoomTarget.current = 1.0;
+      return;
     }
-    inFocus.current = cam.zoom > 1.01;
+    const cam = camera as THREE.OrthographicCamera;
+    cam.zoom           = 0.5;
+    cam.updateProjectionMatrix();
+    zoomTarget.current = 0.5; // keep normal lerp idle during the delay
+    wheel.current      = { x: 0, y: 0 };
+    triggerIntro();            // fire card opacity+scale animations
 
-    if (selectTarget.current) {
-      const { x: tx, y: ty } = selectTarget.current;
-      const dx = tx - cam.position.x;
-      const dy = ty - cam.position.y;
-      cam.position.x += dx * 0.1;
-      cam.position.y += dy * 0.1;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-        cam.position.set(tx, ty, cam.position.z);
+    const t = setTimeout(() => {
+      if (selectTarget.current) return; // user already picked a card, skip
+      zoomTarget.current = 1.0;
+      zoomAnim.current   = { startTime: performance.now(), fromZoom: cam.zoom };
+    }, INTRO_ZOOM_DELAY);
+
+    return () => { clearTimeout(t); zoomAnim.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, camera]);
+
+  useFrame(() => {
+    const cam = camera as THREE.OrthographicCamera;
+
+    // Cancel intro zoom if selection starts mid-animation
+    if (zoomAnim.current && selectTarget.current) {
+      zoomAnim.current = null;
+    }
+
+    // Detect new selectTarget → initiate synchronized focus animation
+    if (selectTarget.current && !focusAnim.current && !zoomAnim.current) {
+      focusAnim.current = {
+        startTime: performance.now(),
+        fromX:     cam.position.x,
+        fromY:     cam.position.y,
+        toX:       selectTarget.current.x,
+        toY:       selectTarget.current.y,
+        fromZoom:  cam.zoom,
+        toZoom:    zoomTarget.current,
+      };
+    }
+
+    // ── Zoom + position ──────────────────────────────────────────────────────
+    if (zoomAnim.current) {
+      // Intro: time-based easeInOutCubic — slow start, smooth settle
+      const elapsed = performance.now() - zoomAnim.current.startTime;
+      const t       = Math.min(1, elapsed / INTRO_ZOOM_DURATION);
+      cam.zoom      = zoomAnim.current.fromZoom + (1.0 - zoomAnim.current.fromZoom) * easeInOutCubic(t);
+      cam.updateProjectionMatrix();
+      if (t >= 1) { cam.zoom = 1.0; zoomAnim.current = null; }
+
+    } else if (focusAnim.current) {
+      // Focus: position + zoom move on the same easeOutCubic curve
+      const elapsed = performance.now() - focusAnim.current.startTime;
+      const t       = Math.min(1, elapsed / FOCUS_DURATION);
+      const ease    = easeOutQuart(t);
+      const { fromX, fromY, toX, toY, fromZoom, toZoom } = focusAnim.current;
+      cam.position.x = fromX + (toX - fromX) * ease;
+      cam.position.y = fromY + (toY - fromY) * ease;
+      cam.zoom       = fromZoom + (toZoom - fromZoom) * ease;
+      cam.updateProjectionMatrix();
+      if (t >= 1) {
+        cam.position.set(toX, toY, cam.position.z);
+        cam.zoom = toZoom;
+        cam.updateProjectionMatrix();
         selectTarget.current = null;
+        focusAnim.current    = null;
       }
+
     } else {
+      // Idle: zoom lerp for exit-focus, then wheel pan
+      const zDiff = zoomTarget.current - cam.zoom;
+      if (Math.abs(zDiff) > 0.001) {
+        cam.zoom += zDiff * 0.16;
+        cam.updateProjectionMatrix();
+      } else if (cam.zoom !== zoomTarget.current) {
+        cam.zoom = zoomTarget.current;
+        cam.updateProjectionMatrix();
+      }
       cam.position.x += wheel.current.x / cam.zoom;
       cam.position.y += wheel.current.y / cam.zoom;
       wheel.current = { x: 0, y: 0 };
     }
+
+    inFocus.current = cam.zoom > 1.01;
   });
 
   return null;
@@ -383,7 +482,7 @@ function PanelPositioner({
     const sx  = (wp[0] - cam.position.x) * cam.zoom + size.width  / 2;
     const sy  = -(wp[1] - cam.position.y) * cam.zoom + size.height / 2;
     panelX.set(sx + halfWRef.current * cam.zoom + paramsRef.current.gapPanel);
-    panelY.set(sy - halfHRef.current * cam.zoom);
+    panelY.set(sy - halfHRef.current * cam.zoom); // card top edge
   });
 
   return null;
@@ -393,7 +492,7 @@ function PanelPositioner({
 function InfiniteTiles({
   tile, videoTextures, selected, onSelect,
   selectTarget, zoomTarget, focusExitRef,
-  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef,
+  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, active,
 }: {
   tile:          ReturnType<typeof buildTile>;
   videoTextures: Map<string, THREE.VideoTexture>;
@@ -408,6 +507,7 @@ function InfiniteTiles({
   panelX:        MotionValue<number>;
   panelY:        MotionValue<number>;
   paramsRef:     React.MutableRefObject<Params>;
+  active:        boolean;
 }) {
   const { camera } = useThree();
   const { TILE_W, TILE_H, items, positions } = tile;
@@ -448,6 +548,7 @@ function InfiniteTiles({
         zoomTarget={zoomTarget}
         focusExitRef={focusExitRef}
         paramsRef={paramsRef}
+        active={active}
       />
       <PanelPositioner
         worldPosRef={worldPosRef}
@@ -573,31 +674,27 @@ function DebugPane({
 
 // ─── Loading bar ──────────────────────────────────────────────────────────────
 //
-//  progress = 0      : indeterminate (slow fake ramp to 30%)
-//  0 < progress < 1  : real Three.js load progress from DefaultLoadingManager
-//  progress = 1      : complete, bar fills then exits
+//  Full-screen overlay that masks the Three.js WebGL init freeze.
+//  Shows on first visit only — revisits have everything cached so no freeze.
+//  Bar animates from 0 → 100 % over ~1.2 s, then the overlay fades out.
 //
-function LoadingBar({ loading, progress }: { loading: boolean; progress: number }) {
-  const pct = Math.round(progress * 100);
+function LoadingBar({ loading }: { loading: boolean }) {
   return (
     <AnimatePresence>
       {loading && (
         <motion.div
           key="loading-bar"
-          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-[90] bg-stone-50 flex items-center justify-center pointer-events-none"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="w-16 h-1 rounded-full bg-stone-200 overflow-hidden">
+          <div className="w-16 h-[3px] rounded-full bg-stone-200 overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-stone-500"
+              className="h-full rounded-full bg-stone-400"
               initial={{ width: "0%" }}
-              animate={{ width: pct > 0 ? `${pct}%` : "55%" }}
-              transition={{
-                duration: pct === 100 ? 0.2 : pct > 0 ? 0.25 : 2.0,
-                ease:     pct > 0 ? "easeOut" : [0.05, 0.55, 0.85, 1.0],
-              }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 1.2, ease: [0.05, 0.55, 0.85, 1.0] }}
             />
           </div>
         </motion.div>
@@ -620,18 +717,17 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
   // firstMount captures _hasVisited at construction time (before we flip it)
   const firstMount = useRef(!_hasVisited);
 
-  const [selected, setSelected]        = useState<SelectedInstance>(null);
-  const [loading, setLoading]          = useState(firstMount.current);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [tileVersion, setTileVersion]  = useState(0);
+  const [selected, setSelected]   = useState<SelectedInstance>(null);
+  const [loading, setLoading]     = useState(firstMount.current);
+  const [tileVersion, setTileVersion] = useState(0);
 
   const paramsRef           = useRef<Params>({ ...DEFAULT_PARAMS });
   const selectTargetRef     = useRef<{ x: number; y: number } | null>(null);
   const selectedWorldPosRef = useRef<[number, number] | null>(null);
   const selectedHalfWRef    = useRef<number>(CARD_W / 2);
   const selectedHalfHRef    = useRef<number>(CARD_H / 2);
-  // On revisit → already at zoom 1, no entrance animation
-  const zoomTargetRef       = useRef<number>(firstMount.current ? 0.5 : 1.0);
+  // Always start at 0.5 — CameraController handles the dezoom on each visit
+  const zoomTargetRef       = useRef<number>(0.5);
   const focusExitRef        = useRef<(() => void) | null>(null);
 
   const panelX = useMotionValue(-9999);
@@ -720,54 +816,16 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
     return () => cleanups.forEach((fn) => fn());
   }, [artifacts, handleLayoutChange]);
 
-  // Mark visited on mount so subsequent navigations skip the entrance
+  // Mark visited on mount (used by loading bar — shows only on first visit)
   useEffect(() => { _hasVisited = true; }, []);
 
-  // Entrance dezoom 0.5→1.0 — only on first visit
+  // Loading bar — only on first visit (revisits have all assets cached).
+  // Simple fixed-duration timer — more reliable than DefaultLoadingManager
+  // which can fire prematurely or not at all depending on asset caching.
   useEffect(() => {
     if (!firstMount.current) return;
-    const t = setTimeout(() => { zoomTargetRef.current = 1.0; }, 200);
+    const t = setTimeout(() => setLoading(false), 1600);
     return () => clearTimeout(t);
-  }, []);
-
-  // Loading bar — only on first visit (revisits have all assets cached)
-  useEffect(() => {
-    if (!firstMount.current) return;
-
-    let done  = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const startTime = Date.now();
-    const MIN_MS    = 800;
-
-    const finish = () => {
-      if (done) return;
-      done = true;
-      setLoadProgress(1);
-      const elapsed = Date.now() - startTime;
-      const holdMs  = Math.max(MIN_MS - elapsed, 0) + 300;
-      timer = setTimeout(() => setLoading(false), holdMs);
-    };
-
-    const mgr        = THREE.DefaultLoadingManager;
-    const prevOnLoad = mgr.onLoad;
-    const prevOnProg = mgr.onProgress;
-
-    mgr.onProgress = (url: string, loaded: number, total: number) => {
-      prevOnProg?.(url, loaded, total);
-      if (total > 0) setLoadProgress(loaded / total);
-    };
-    mgr.onLoad = () => { prevOnLoad?.(); finish(); };
-
-    // Fallback: covers video-only scenes or fully-cached sessions
-    const fallback = setTimeout(finish, 2500);
-
-    return () => {
-      clearTimeout(fallback);
-      if (timer) clearTimeout(timer);
-      mgr.onLoad     = prevOnLoad;
-      mgr.onProgress = prevOnProg;
-      done = true;
-    };
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -779,6 +837,11 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
   }, [panelX]);
 
   focusExitRef.current = handleDeselect;
+
+  // Deselect panel when navigating away from /play
+  useEffect(() => {
+    if (!active) handleDeselect();
+  }, [active, handleDeselect]);
 
   const handleSelect = useCallback(
     (
@@ -792,10 +855,10 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
       const q = paramsRef.current;
       // Vertical bias: (0.5 - focusVCenter) * H / zoom  → item sits above center
       const vBias = (0.5 - q.focusVCenter) * window.innerHeight / q.focusZoom;
-      setSelected({ artifact: item, groupIdx, itemIdx });
+      setSelected({ artifact: item, groupIdx, itemIdx }); // focusState.isActive set by useLayoutEffect
       selectTargetRef.current     = {
         x: point[0] + q.camOffsetX / q.focusZoom,
-        y: point[1] - vBias,  // camera moves down → item appears above viewport center
+        y: point[1] - vBias,
       };
       selectedWorldPosRef.current = point;
       selectedHalfWRef.current    = halfW;
@@ -819,7 +882,7 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
       data-lenis-prevent
       style={{ backgroundColor: "#ffffff" }}
     >
-      <LoadingBar loading={loading && active} progress={loadProgress} />
+      <LoadingBar loading={loading && active} />
 
       {/* Canvas — always visible, dezoom 0.5→1 on mount */}
       <div style={{ position: "absolute", inset: 0 }}>
@@ -845,6 +908,7 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
             panelX={panelX}
             panelY={panelY}
             paramsRef={paramsRef}
+            active={active}
           />
         </Canvas>
       </div>
@@ -856,13 +920,12 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
             key={`${selected.groupIdx}-${selected.itemIdx}`}
             className="fixed z-50 pointer-events-none"
             style={{ left: 0, top: 0, x: panelX, y: panelY }}
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.22, delay: PANEL_DELAY_S, ease: "easeOut" } }}
+            exit={{ opacity: 0, transition: { duration: 0.14, ease: "easeIn" } }}
           >
             <div className="pointer-events-auto">
-              <ArtifactInfo artifact={selected.artifact} />
+              <ArtifactInfo artifact={selected.artifact} scrambleDelayMs={PANEL_DELAY_S * 1000} />
             </div>
           </motion.div>
         )}

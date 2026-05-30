@@ -254,7 +254,6 @@ h3 {
   font-size: var(--text-3xl);
   font-weight: 640;
   --font-wght: 640;
-  line-height: var(--text-lg--line-height);
   letter-spacing: var(--tracking-tight);
   color: var(--color-stone-800);
 }
