@@ -45,16 +45,17 @@ export function ProjectCard({ project }: ProjectCardProps) {
             muted
             loop
             playsInline
-            autoPlay
+            preload="none"
           />
         ) : mediaUrl ? (
           <img
             src={mediaUrl}
             alt={project.title}
             className="block h-auto w-full"
+            loading="lazy"
           />
         ) : (
-          <div className="aspect-4/3 bg-muted" />
+          <div className="aspect-video bg-muted" />
         )}
 
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 overflow-hidden p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
