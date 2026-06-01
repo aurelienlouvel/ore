@@ -80,6 +80,7 @@ function MediaCell({
             muted
             loop
             playsInline
+            preload="metadata"
             className="w-full rounded-2xl"
             style={containerStyle}
           />
@@ -99,7 +100,7 @@ function MediaCell({
       <div className="overflow-hidden rounded-2xl" style={containerStyle}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop) : (item.imageUrl ?? "")}
+          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop, { width: 1600 }) : (item.imageUrl ?? "")}
           alt={item.imageAlt ?? ""}
           className="w-full h-full object-cover block"
           style={{ objectPosition: hotspotToObjectPosition(item.imageHotspot) }}
@@ -138,6 +139,7 @@ function SingleLayout({ item }: { item: MediaItem }) {
             muted
             loop
             playsInline
+            preload="metadata"
             className="w-full rounded-2xl"
           />
         ) : null}
@@ -156,7 +158,7 @@ function SingleLayout({ item }: { item: MediaItem }) {
       <div className="overflow-hidden rounded-2xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop) : (item.imageUrl ?? "")}
+          src={item.imageRef ? buildImageUrl(item.imageRef, item.imageUrl, item.imageHotspot, item.imageCrop, { width: 1600 }) : (item.imageUrl ?? "")}
           alt={item.imageAlt ?? ""}
           className="w-full block"
           style={{ objectPosition: hotspotToObjectPosition(item.imageHotspot) }}

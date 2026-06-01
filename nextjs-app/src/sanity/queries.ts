@@ -7,7 +7,7 @@ export const projectsListQuery = defineQuery(`
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
     "tags": tags[]->{ _id, name, color, icon },
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url }
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" }
   }
 `);
 
@@ -54,7 +54,7 @@ const contentBlockFields = `
   quote,
   author,
   authorRole,
-  "avatarUrl": avatar.asset->url,
+  "avatarUrl": avatar.asset->url + "?w=72&q=80&auto=format",
   variant,
   title,
   provider,
@@ -68,14 +68,14 @@ export const projectDetailQuery = defineQuery(`
     title,
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
     startDate,
     endDate,
     "tags": tags[]->{ _id, name, color, icon },
     "roles": roles[]->{ _id, name, color, icon },
     "mates": contributors[defined(person)] {
       _key,
-      "person": person->{ _id, firstName, lastName, "avatarUrl": avatar.asset->url, linkedinUrl },
+      "person": person->{ _id, firstName, lastName, "avatarUrl": avatar.asset->url + "?w=72&q=80&auto=format", linkedinUrl },
       "roles": roles[]->{ _id, name, color, icon }
     },
     redirectUrl,
