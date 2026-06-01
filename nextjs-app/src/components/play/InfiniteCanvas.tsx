@@ -325,13 +325,15 @@ const FOCUS_DURATION      = 600;  // ms — focus snap
 const PANEL_DELAY_S       = (FOCUS_DURATION * 0.75) / 1000; // seconds for Framer Motion
 
 function CameraController({
-  selectTarget, zoomTarget, focusExitRef, paramsRef, active,
+  selectTarget, zoomTarget, focusExitRef, paramsRef, active, running, introKey,
 }: {
   selectTarget: React.MutableRefObject<{ x: number; y: number } | null>;
   zoomTarget:   React.MutableRefObject<number>;
   focusExitRef: React.MutableRefObject<(() => void) | null>;
   paramsRef:    React.MutableRefObject<Params>;
   active:       boolean;
+  running:      boolean; // frameloop alive — false only when fully at rest (hidden)
+  introKey:     number;  // bumps when the canvas is actually revealed → play intro
 }) {
   const { camera } = useThree();
   const wheel    = useRef({ x: 0, y: 0 });
@@ -367,15 +369,37 @@ function CameraController({
     return () => window.removeEventListener("wheel", onWheel);
   }, [selectTarget, zoomTarget, focusExitRef]);
 
-  // Intro — runs each time the canvas becomes active
+  // Reset transient camera state whenever the canvas goes inactive (leaving /play)
   useEffect(() => {
     if (!active) {
       wheel.current      = { x: 0, y: 0 };
       zoomAnim.current   = null;
       focusAnim.current  = null;
       zoomTarget.current = 1.0;
-      return;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  // Arm the camera at the intro start zoom while fully at rest (frameloop off,
+  // canvas hidden after the outro). The next reveal then renders at 0.5 from the
+  // first frame — no flash at zoom 1 before the dezoom kicks in.
+  useEffect(() => {
+    if (!running) {
+      const cam = camera as THREE.OrthographicCamera;
+      cam.zoom = 0.5;
+      cam.updateProjectionMatrix();
+      zoomTarget.current = 0.5;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, camera]);
+
+  // Intro — fires when the canvas is actually REVEALED (introKey bumps), not at
+  // mount. On the first visit the WebGL init freezes for ~1 s behind the
+  // LoadingBar; triggering at mount would let the time-based dezoom + card
+  // stagger elapse unseen. introKey is driven by `active && !loading` upstream,
+  // so the animation only starts once the canvas is truly on screen.
+  useEffect(() => {
+    if (introKey === 0) return;
     const cam = camera as THREE.OrthographicCamera;
     cam.zoom           = 0.5;
     cam.updateProjectionMatrix();
@@ -391,7 +415,7 @@ function CameraController({
 
     return () => { clearTimeout(t); zoomAnim.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, camera]);
+  }, [introKey, camera]);
 
   useFrame(() => {
     const cam = camera as THREE.OrthographicCamera;
@@ -492,7 +516,7 @@ function PanelPositioner({
 function InfiniteTiles({
   tile, videoTextures, selected, onSelect,
   selectTarget, zoomTarget, focusExitRef,
-  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, active,
+  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, active, running, introKey,
 }: {
   tile:          ReturnType<typeof buildTile>;
   videoTextures: Map<string, THREE.VideoTexture>;
@@ -508,6 +532,8 @@ function InfiniteTiles({
   panelY:        MotionValue<number>;
   paramsRef:     React.MutableRefObject<Params>;
   active:        boolean;
+  running:       boolean;
+  introKey:      number;
 }) {
   const { camera } = useThree();
   const { TILE_W, TILE_H, items, positions } = tile;
@@ -549,6 +575,8 @@ function InfiniteTiles({
         focusExitRef={focusExitRef}
         paramsRef={paramsRef}
         active={active}
+        running={running}
+        introKey={introKey}
       />
       <PanelPositioner
         worldPosRef={worldPosRef}
@@ -713,13 +741,22 @@ let _hasVisited = false;
 const _videoCache = new Map<string, THREE.VideoTexture>();
 
 // ─── Main component ────────────────────────────────────────────────────────────
-export function InfiniteCanvas({ artifacts, active = true }: { artifacts: ArtifactCanvasItem[]; active?: boolean }) {
+export function InfiniteCanvas({ artifacts, active = true, running = active }: {
+  artifacts: ArtifactCanvasItem[];
+  active?:   boolean;
+  running?:  boolean; // keeps frameloop alive during outro even when active=false
+}) {
   // firstMount captures _hasVisited at construction time (before we flip it)
   const firstMount = useRef(!_hasVisited);
 
   const [selected, setSelected]   = useState<SelectedInstance>(null);
   const [loading, setLoading]     = useState(firstMount.current);
   const [tileVersion, setTileVersion] = useState(0);
+  // Bumps when the canvas is actually revealed (active & not loading) → triggers
+  // the intro. Decoupling from `active` ensures the first-visit intro isn't
+  // consumed behind the LoadingBar during WebGL init.
+  const [introKey, setIntroKey]   = useState(0);
+  const readyRef                  = useRef(false);
 
   const paramsRef           = useRef<Params>({ ...DEFAULT_PARAMS });
   const selectTargetRef     = useRef<{ x: number; y: number } | null>(null);
@@ -763,6 +800,7 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
       vid.autoplay    = true;
       vid.loop        = true;
       vid.playsInline = true;
+      vid.preload     = "auto";        // texture WebGL — streaming complet nécessaire
       Object.assign(vid.style, {
         position: "fixed", opacity: "0", pointerEvents: "none",
         width: "1px", height: "1px", top: "0", left: "0",
@@ -828,6 +866,19 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
     return () => clearTimeout(t);
   }, []);
 
+  // Intro trigger — bump introKey on the rising edge of "revealed"
+  // (active & not loading). First visit: waits for the LoadingBar to clear.
+  // Revisits: fires when `active` flips true after the route transition.
+  useEffect(() => {
+    const ready = active && !loading;
+    if (ready && !readyRef.current) {
+      readyRef.current = true;
+      setIntroKey((k) => k + 1);
+    } else if (!ready) {
+      readyRef.current = false;
+    }
+  }, [active, loading]);
+
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleDeselect = useCallback(() => {
     setSelected(null);
@@ -890,7 +941,7 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
           orthographic
           camera={{ zoom: 0.5, position: [0, 0, 100], near: 0.1, far: 10000 }}
           gl={{ antialias: true, powerPreference: "high-performance", alpha: true }}
-          frameloop={active ? "always" : "never"}
+          frameloop={running ? "always" : "never"}
           onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
           onPointerMissed={handleDeselect}
         >
@@ -909,6 +960,8 @@ export function InfiniteCanvas({ artifacts, active = true }: { artifacts: Artifa
             panelY={panelY}
             paramsRef={paramsRef}
             active={active}
+            running={running}
+            introKey={introKey}
           />
         </Canvas>
       </div>

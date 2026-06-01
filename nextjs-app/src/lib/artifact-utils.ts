@@ -36,12 +36,6 @@ export function getCardHeight(artifact: ArtifactCanvasItem): number {
 }
 
 // ─── Intro animation state (module-level — survives remounts / soft-navs) ──────
-//
-//  `version` increments each time the intro fires so cards can detect a new
-//  cycle even if the component never unmounted.
-//  `startTime` is performance.now() at trigger time; cards use it + their own
-//  stagger delay to compute opacity / scale.
-//
 export const introState = {
   version:   0,
   startTime: -Infinity as number,
@@ -50,6 +44,20 @@ export const introState = {
 export function triggerIntro(): void {
   introState.version  += 1;
   introState.startTime = typeof performance !== "undefined" ? performance.now() : 0;
+}
+
+// ─── Outro animation state ────────────────────────────────────────────────────
+export const OUTRO_DURATION    = 450; // ms — total card fade-out time
+export const OUTRO_STAGGER_MAX = 120; // ms — max extra delay between cards
+
+export const outroState = {
+  version:   0,
+  startTime: -Infinity as number,
+};
+
+export function triggerOutro(): void {
+  outroState.version  += 1;
+  outroState.startTime = typeof performance !== "undefined" ? performance.now() : 0;
 }
 
 // ─── Focus dim state ──────────────────────────────────────────────────────────
@@ -65,6 +73,6 @@ export function getArtifactImageUrl(artifact: ArtifactCanvasItem): string | null
   const m = artifact.firstMedia;
   if (!m || m._type === "galleryVideo") return null;
   return m.imageRef
-    ? buildImageUrl(m.imageRef, m.imageUrl, m.imageHotspot, m.imageCrop)
+    ? buildImageUrl(m.imageRef, m.imageUrl, m.imageHotspot, m.imageCrop, { width: 1280, quality: 80 })
     : (m.imageUrl ?? null);
 }

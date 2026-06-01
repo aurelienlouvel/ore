@@ -6,7 +6,7 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { buildImageUrl } from "@/lib/sanity-image";
-import { CARD_W, CARD_H, getArtifactImageUrl, introState } from "@/lib/artifact-utils";
+import { CARD_W, CARD_H, getArtifactImageUrl, introState, outroState, OUTRO_DURATION, OUTRO_STAGGER_MAX } from "@/lib/artifact-utils";
 
 export { CARD_W, CARD_H, getArtifactImageUrl };
 
@@ -211,7 +211,10 @@ function MeshBody({
   const groupRef = useRef<THREE.Group>(null);
   const selAnim  = useRef(1);
   const intro    = useRef({ version: -1, opacity: 0, scaleBoost: 0.85, done: false });
-  const staggerMs = useRef(Math.random() * INTRO_STAGGER_MAX).current;
+  const outro    = useRef({ version: -1, opacity: 1, scaleBoost: 1.0, done: true });
+  const staggerMs      = useRef(Math.random() * INTRO_STAGGER_MAX).current;
+  // Outro stagger is a scaled-down version of intro stagger (same relative order)
+  const outroStaggerMs = staggerMs * (OUTRO_STAGGER_MAX / INTRO_STAGGER_MAX);
   const [hovered, setHovered] = useState(false);
 
   const w = CARD_W * cardScale;
@@ -221,6 +224,7 @@ function MeshBody({
     // ── Intro ────────────────────────────────────────────────────────────────
     if (intro.current.version !== introState.version) {
       intro.current = { version: introState.version, opacity: 0, scaleBoost: 0.85, done: false };
+      outro.current.done = true; // new intro cancels any ongoing outro
     }
     if (!intro.current.done) {
       const elapsed = performance.now() - introState.startTime - staggerMs;
@@ -230,13 +234,29 @@ function MeshBody({
       if (t >= 1) intro.current.done = true;
     }
 
+    // ── Outro ────────────────────────────────────────────────────────────────
+    if (outro.current.version !== outroState.version) {
+      outro.current = { version: outroState.version, opacity: 1, scaleBoost: 1.0, done: false };
+    }
+    if (!outro.current.done) {
+      const elapsed = performance.now() - outroState.startTime - outroStaggerMs;
+      const t       = Math.max(0, Math.min(1, elapsed / OUTRO_DURATION));
+      outro.current.opacity    = 1 - easeOutQuart(t);
+      outro.current.scaleBoost = 1 - 0.12 * t;
+      if (t >= 1) outro.current.done = true;
+    }
+
+    // Outro overrides intro while playing
+    const opacity    = outro.current.done ? intro.current.opacity    : outro.current.opacity;
+    const scaleBoost = outro.current.done ? intro.current.scaleBoost : outro.current.scaleBoost;
+
     const mat = meshRef.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (mat) mat.opacity = intro.current.opacity;
+    if (mat) mat.opacity = opacity;
 
     // ── Selection spring ─────────────────────────────────────────────────────
     const selTarget = isSelected ? 1.04 : 1;
     selAnim.current += (selTarget - selAnim.current) * 0.12;
-    meshRef.current?.scale.setScalar(selAnim.current * intro.current.scaleBoost);
+    meshRef.current?.scale.setScalar(selAnim.current * scaleBoost);
   });
 
   return (
@@ -330,7 +350,7 @@ export function ArtifactMesh({
   }
 
   const src = m?.imageRef
-    ? buildImageUrl(m.imageRef, m.imageUrl, m.imageHotspot, m.imageCrop)
+    ? buildImageUrl(m.imageRef, m.imageUrl, m.imageHotspot, m.imageCrop, { width: 1280, quality: 80 })
     : (m?.imageUrl ?? null);
 
   if (!src) return <PlaceholderMesh cardH={cardH} {...rest} />;
