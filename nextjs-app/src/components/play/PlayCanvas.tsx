@@ -5,17 +5,19 @@ import { useState, useEffect, useRef } from "react";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { InfiniteCanvas } from "./InfiniteCanvas";
 import { triggerOutro, OUTRO_DURATION, OUTRO_STAGGER_MAX } from "@/lib/artifact-utils";
+import { EASE_IN_OUT_CSS } from "@/lib/easings";
 
 // Crossfade de sortie — voile blanc + cards fondent ensemble, révélant la page.
-const FADE_OUT_MS = 550;
+const FADE_OUT_MS = 470;
 // Fade-in d'entrée — masque la frame résiduelle de la visite précédente
 // (cards à zoom 1) le temps que l'intro three (reset opacity 0 + dezoom) prenne.
-const FADE_IN_MS  = 260;
+const FADE_IN_MS  = 280;
 // Le canvas reste monté le temps de l'outro three + du crossfade de sortie.
 const EXIT_TOTAL  = Math.max(OUTRO_DURATION + OUTRO_STAGGER_MAX, FADE_OUT_MS) + 60;
-// Délai d'entrée : laisse la transition de route se terminer avant d'activer
-// le canvas, pour ne pas couvrir le fade-out de la page précédente.
-const ENTER_DELAY = 460;
+// Délai d'entrée : court, pour réduire l'écran vide entre la page sortante et
+// le canvas. Le fade-in (expo.inOut, lent au départ) reste transparent au début
+// → la vague d'outro de la page reste visible dessous, puis le canvas prend le relais.
+const ENTER_DELAY = 260;
 
 /**
  * Wrapper persistant — monté une fois, jamais démonté.
@@ -39,9 +41,9 @@ export function PlayCanvas({ artifacts }: { artifacts: ArtifactCanvasItem[] }) {
   // transition CSS opacity — activée pendant les fades d'entrée/sortie
   const [fading,  setFading]  = useState(false);
   const [fadeMs,  setFadeMs]  = useState(FADE_OUT_MS);
-  // ease-in à l'entrée : l'opacity reste très basse les 1ères frames, masquant
-  // la frame résiduelle (cards à zoom 1) avant que l'intro ne reprenne la main.
-  const [fadeEase, setFadeEase] = useState<"ease-in" | "ease-out">("ease-out");
+  // expo.inOut : démarrage lent → l'opacity reste très basse les 1ères frames,
+  // ce qui masque aussi la frame résiduelle (cards à zoom 1) à l'entrée.
+  const [fadeEase, setFadeEase] = useState<string>(EASE_IN_OUT_CSS);
 
   const prevIsPlay = useRef(isPlay);
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,7 +59,7 @@ export function PlayCanvas({ artifacts }: { artifacts: ArtifactCanvasItem[] }) {
       timerRef.current = setTimeout(() => {
         setFading(true);        // fade-in (et non révélation instantanée)
         setFadeMs(FADE_IN_MS);
-        setFadeEase("ease-in");
+        setFadeEase(EASE_IN_OUT_CSS);
         setVisible(true);
         setActive(true);        // → déclenche l'intro (reset cards + dezoom)
         setOpacity(1);
@@ -70,7 +72,7 @@ export function PlayCanvas({ artifacts }: { artifacts: ArtifactCanvasItem[] }) {
       setVisible(true);     // reste visible le temps du crossfade
       setFading(true);      // active la transition CSS
       setFadeMs(FADE_OUT_MS);
-      setFadeEase("ease-out");
+      setFadeEase(EASE_IN_OUT_CSS);
       setOpacity(0);        // voile blanc + cards fondent → révèle la page
       timerRef.current = setTimeout(() => {
         setRunning(false);

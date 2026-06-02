@@ -7,6 +7,7 @@ import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { ArtifactMesh, CARD_W, CARD_H } from "./ArtifactMesh";
 import { getCardHeight, _videoDimsCache, MIN_CARD_H, MAX_CARD_H, triggerIntro } from "@/lib/artifact-utils";
+import { easeOutExpo, easeZoom } from "@/lib/easings";
 import { ArtifactInfo } from "./ArtifactInfo";
 
 // ─── Tunable params ────────────────────────────────────────────────────────────
@@ -304,23 +305,15 @@ function GridBackground({ paramsRef }: { paramsRef: React.MutableRefObject<Param
 
 // ─── Camera controller ────────────────────────────────────────────────────────
 //
-//  Intro zoom : time-based easeInOutCubic over INTRO_ZOOM_DURATION ms,
+//  Intro zoom : time-based easeInOutExpo over INTRO_ZOOM_DURATION ms,
 //               starting INTRO_ZOOM_DELAY ms after `active` flips true.
-//  Focus snap : position + zoom animated together on the same easeOutCubic curve
+//  Focus snap : position + zoom animated together on the same easeOutExpo curve
 //               so they always arrive at the same instant (no disjoint easing).
 //  Exit focus : exponential lerp on zoom only (instant-feel, no duration overhead).
 //
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-// Same family as the focusout exponential lerp — fast start, smooth cinematic settle
-function easeOutQuart(t: number): number {
-  return 1 - Math.pow(1 - t, 4);
-}
-
-const INTRO_ZOOM_DELAY    = 60;   // ms — micro delay, zoom starts with the cards
-const INTRO_ZOOM_DURATION = 1400; // ms — slow, smooth camera pull-back
-const FOCUS_DURATION      = 600;  // ms — focus snap
+// Arrivée /play : onde des dots + vague des cards + dézoom démarrent EN MÊME TEMPS.
+const INTRO_ZOOM_DURATION = 1050; // ms — dézoom caméra 0.5→1
+const FOCUS_DURATION      = 500;  // ms — focus snap
 // Panel appears once media is nearly stable (Framer Motion delay, not a timer)
 const PANEL_DELAY_S       = (FOCUS_DURATION * 0.75) / 1000; // seconds for Framer Motion
 
@@ -394,26 +387,20 @@ function CameraController({
   }, [running, camera]);
 
   // Intro — fires when the canvas is actually REVEALED (introKey bumps), not at
-  // mount. On the first visit the WebGL init freezes for ~1 s behind the
-  // LoadingBar; triggering at mount would let the time-based dezoom + card
-  // stagger elapse unseen. introKey is driven by `active && !loading` upstream,
-  // so the animation only starts once the canvas is truly on screen.
+  // mount (the WebGL init freezes behind the LoadingBar on first visit).
+  // Vague des cards + dézoom 0.5→1 démarrent ensemble.
   useEffect(() => {
     if (introKey === 0) return;
     const cam = camera as THREE.OrthographicCamera;
     cam.zoom           = 0.5;
     cam.updateProjectionMatrix();
-    zoomTarget.current = 0.5; // keep normal lerp idle during the delay
     wheel.current      = { x: 0, y: 0 };
-    triggerIntro();            // fire card opacity+scale animations
 
-    const t = setTimeout(() => {
-      if (selectTarget.current) return; // user already picked a card, skip
-      zoomTarget.current = 1.0;
-      zoomAnim.current   = { startTime: performance.now(), fromZoom: cam.zoom };
-    }, INTRO_ZOOM_DELAY);
+    triggerIntro();       // vague des cards
+    zoomTarget.current = 1.0;
+    zoomAnim.current   = { startTime: performance.now(), fromZoom: cam.zoom }; // dézoom
 
-    return () => { clearTimeout(t); zoomAnim.current = null; };
+    return () => { zoomAnim.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [introKey, camera]);
 
@@ -440,10 +427,10 @@ function CameraController({
 
     // ── Zoom + position ──────────────────────────────────────────────────────
     if (zoomAnim.current) {
-      // Intro: time-based easeInOutCubic — slow start, smooth settle
+      // Intro zoom (phase 3) — courbe custom cubic-bezier(1,-0.01,.42,1)
       const elapsed = performance.now() - zoomAnim.current.startTime;
       const t       = Math.min(1, elapsed / INTRO_ZOOM_DURATION);
-      cam.zoom      = zoomAnim.current.fromZoom + (1.0 - zoomAnim.current.fromZoom) * easeInOutCubic(t);
+      cam.zoom      = zoomAnim.current.fromZoom + (1.0 - zoomAnim.current.fromZoom) * easeZoom(t);
       cam.updateProjectionMatrix();
       if (t >= 1) { cam.zoom = 1.0; zoomAnim.current = null; }
 
@@ -451,7 +438,7 @@ function CameraController({
       // Focus: position + zoom move on the same easeOutCubic curve
       const elapsed = performance.now() - focusAnim.current.startTime;
       const t       = Math.min(1, elapsed / FOCUS_DURATION);
-      const ease    = easeOutQuart(t);
+      const ease    = easeOutExpo(t);
       const { fromX, fromY, toX, toY, fromZoom, toZoom } = focusAnim.current;
       cam.position.x = fromX + (toX - fromX) * ease;
       cam.position.y = fromY + (toY - fromY) * ease;

@@ -7,18 +7,9 @@ import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { buildImageUrl } from "@/lib/sanity-image";
 import { CARD_W, CARD_H, getArtifactImageUrl, introState, outroState, OUTRO_DURATION, OUTRO_STAGGER_MAX } from "@/lib/artifact-utils";
+import { easeOutExpo, easeOutBack } from "@/lib/easings";
 
 export { CARD_W, CARD_H, getArtifactImageUrl };
-
-// ─── Card intro easing ────────────────────────────────────────────────────────
-function easeOutQuart(t: number): number {
-  return 1 - Math.pow(1 - t, 4);
-}
-function springScale(t: number): number {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  return 1 - Math.exp(-3 * t) * Math.cos(2.5 * Math.PI * t);
-}
 
 // ─── Card rounded-corner alpha map ───────────────────────────────────────────
 //  3× supersampling for smooth anti-aliased edges.
@@ -195,8 +186,8 @@ type SharedProps = {
 };
 
 // ─── Intro animation config ───────────────────────────────────────────────────
-const INTRO_DURATION    = 700;
-const INTRO_STAGGER_MAX = 400; // more spread → visible wave effect
+const INTRO_DURATION    = 520;
+const INTRO_STAGGER_MAX = 240; // more spread → visible wave effect
 
 // ─── MeshBody — image or video card ──────────────────────────────────────────
 function MeshBody({
@@ -210,11 +201,13 @@ function MeshBody({
   const meshRef  = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const selAnim  = useRef(1);
-  const intro    = useRef({ version: -1, opacity: 0, scaleBoost: 0.85, done: false });
+  const intro    = useRef({ version: -1, opacity: 0, scaleBoost: 0.72, done: false });
   const outro    = useRef({ version: -1, opacity: 1, scaleBoost: 1.0, done: true });
   const staggerMs      = useRef(Math.random() * INTRO_STAGGER_MAX).current;
   // Outro stagger is a scaled-down version of intro stagger (same relative order)
   const outroStaggerMs = staggerMs * (OUTRO_STAGGER_MAX / INTRO_STAGGER_MAX);
+  // Légère inclinaison initiale (rendu organique) — se résorbe avec l'opacity.
+  const introRot       = useRef((Math.random() - 0.5) * 0.16).current; // ±~4.6°
   const [hovered, setHovered] = useState(false);
 
   const w = CARD_W * cardScale;
@@ -223,14 +216,14 @@ function MeshBody({
   useFrame(() => {
     // ── Intro ────────────────────────────────────────────────────────────────
     if (intro.current.version !== introState.version) {
-      intro.current = { version: introState.version, opacity: 0, scaleBoost: 0.85, done: false };
+      intro.current = { version: introState.version, opacity: 0, scaleBoost: 0.72, done: false };
       outro.current.done = true; // new intro cancels any ongoing outro
     }
     if (!intro.current.done) {
       const elapsed = performance.now() - introState.startTime - staggerMs;
       const t       = Math.max(0, Math.min(1, elapsed / INTRO_DURATION));
-      intro.current.opacity    = easeOutQuart(t);
-      intro.current.scaleBoost = t >= 1 ? 1 : 0.85 + 0.15 * springScale(t);
+      intro.current.opacity    = easeOutExpo(t);
+      intro.current.scaleBoost = t >= 1 ? 1 : 0.72 + 0.28 * easeOutBack(t);
       if (t >= 1) intro.current.done = true;
     }
 
@@ -241,8 +234,8 @@ function MeshBody({
     if (!outro.current.done) {
       const elapsed = performance.now() - outroState.startTime - outroStaggerMs;
       const t       = Math.max(0, Math.min(1, elapsed / OUTRO_DURATION));
-      outro.current.opacity    = 1 - easeOutQuart(t);
-      outro.current.scaleBoost = 1 - 0.12 * t;
+      outro.current.opacity    = 1 - easeOutExpo(t);
+      outro.current.scaleBoost = 1 - 0.16 * t;
       if (t >= 1) outro.current.done = true;
     }
 
@@ -257,6 +250,8 @@ function MeshBody({
     const selTarget = isSelected ? 1.04 : 1;
     selAnim.current += (selTarget - selAnim.current) * 0.12;
     meshRef.current?.scale.setScalar(selAnim.current * scaleBoost);
+    // Inclinaison initiale qui se redresse à mesure que la card apparaît
+    if (meshRef.current) meshRef.current.rotation.z = introRot * (1 - opacity);
   });
 
   return (
