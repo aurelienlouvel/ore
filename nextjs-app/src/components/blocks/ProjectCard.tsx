@@ -35,6 +35,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <Link
       href={`/work/${project.slug}`}
       className="group block transition-transform duration-300 hover:scale-[0.97]"
+      transitionTypes={['nav-forward']}
     >
       <div className="relative overflow-hidden rounded-xl bg-muted">
         {mediaUrl && isVideo ? (

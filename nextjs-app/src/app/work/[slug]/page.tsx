@@ -1,3 +1,4 @@
+import { ViewTransition } from "react";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/client";
 import {
@@ -45,124 +46,138 @@ export default async function ProjectPage({
   const isVideo = isVideoRef(project.thumbnailRef);
 
   return (
-    <main className="mx-auto max-w-5xl pt-4 sm:pt-16 sm:pb-64">
-      <ProjectPageClient
-        title={project.title}
-        redirectUrl={project.redirectUrl}
-      />
-      <div className="px-16 py-12">
-        <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
+    <ViewTransition
+      enter={{ "nav-forward": "view-transition-enter-fwd", default: "none" }}
+      exit={{ "nav-back": "view-transition-exit-back", default: "none" }}
+      default="none"
+    >
+      <main className="w-full bg-white rounded-t-2xl">
+        <div className="mx-auto max-w-5xl pt-4 sm:pt-16 sm:pb-64 ">
+          <ProjectPageClient
+            title={project.title}
+            redirectUrl={project.redirectUrl}
+          />
+          <div className="px-16 py-12">
+            <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
-        <div className="flex flex-row items-center gap-4 px-1.5">
-          {/* Organisation */}
-          {project.organisation && (
-            <div className="flex items-center gap-2">
-              {project.organisation.logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={project.organisation.logoUrl}
-                  alt=""
-                  className="h-6 w-6 rounded-sm object-contain"
-                />
+            <div className="flex flex-row items-center gap-4 px-1.5">
+              {/* Organisation */}
+              {project.organisation && (
+                <div className="flex items-center gap-2">
+                  {project.organisation.logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={project.organisation.logoUrl}
+                      alt=""
+                      className="h-6 w-6 rounded-sm object-contain"
+                    />
+                  )}
+                  <span className="text-md font-medium text-stone-700">
+                    {project.organisation.name}
+                  </span>
+                </div>
               )}
-              <span className="text-md font-medium text-stone-700">
-                {project.organisation.name}
-              </span>
+
+              {/* Tags — colored */}
+              {project.tags && project.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {project.tags.map((tag) => (
+                    <Tag
+                      key={tag._id}
+                      name={tag.name}
+                      color={tag.color}
+                      icon={tag.icon}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
+          </div>
+
+          {mediaUrl && (
+            <ProjectMediaBlock
+              url={mediaUrl}
+              isVideo={isVideo}
+              title={project.title}
+            />
           )}
 
-          {/* Tags — colored */}
-          {project.tags && project.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {project.tags.map((tag) => (
-                <Tag
-                  key={tag._id}
-                  name={tag.name}
-                  color={tag.color}
-                  icon={tag.icon}
-                />
-              ))}
-            </div>
-          )}
+          {/* Metadata sections below media */}
+          <div className="px-16 py-12 flex flex-wrap gap-12">
+            {/* Role */}
+            {project.roles && project.roles.length > 0 && (
+              <RoleBlock roles={project.roles} />
+            )}
+
+            {/* Mates */}
+            {project.mates && project.mates.length > 0 && (
+              <div className="shrink-0">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-2">
+                  <HugeiconsIcon
+                    icon={UserMultipleIcon}
+                    size={12}
+                    strokeWidth={2}
+                  />
+                  mates
+                </div>
+                <MatesBlock mates={project.mates} />
+              </div>
+            )}
+
+            {/* Timeline */}
+            {project.startDate && (
+              <div className="shrink-0">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
+                  <HugeiconsIcon
+                    icon={Calendar02Icon}
+                    size={12}
+                    strokeWidth={2}
+                  />
+                  timeline
+                </div>
+                <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
+                  {(() => {
+                    const start = formatMonth(project.startDate!);
+                    const end = project.endDate
+                      ? formatMonth(project.endDate)
+                      : "Present";
+                    if (start === end) return start;
+                    return (
+                      <>
+                        {start}
+                        <span className="px-2 font-semibold text-stone-400">
+                          →
+                        </span>
+                        {end}
+                      </>
+                    );
+                  })()}
+                </p>
+              </div>
+            )}
+
+            {/* Duration */}
+            {project.startDate && (
+              <div className="shrink-0">
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
+                  <HugeiconsIcon icon={Clock04Icon} size={12} strokeWidth={2} />
+                  duration
+                </div>
+                <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
+                  {calcDuration(project.startDate, project.endDate)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Separator className="" />
+
+          {/* Content sections */}
+          <div className="mt-4">
+            <ContentRenderer content={project.content} />
+          </div>
         </div>
-      </div>
-
-      {mediaUrl && (
-        <ProjectMediaBlock
-          url={mediaUrl}
-          isVideo={isVideo}
-          title={project.title}
-        />
-      )}
-
-      {/* Metadata sections below media */}
-      <div className="px-16 py-12 flex flex-wrap gap-12">
-        {/* Role */}
-        {project.roles && project.roles.length > 0 && (
-          <RoleBlock roles={project.roles} />
-        )}
-
-        {/* Mates */}
-        {project.mates && project.mates.length > 0 && (
-          <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-2">
-              <HugeiconsIcon
-                icon={UserMultipleIcon}
-                size={12}
-                strokeWidth={2}
-              />
-              mates
-            </div>
-            <MatesBlock mates={project.mates} />
-          </div>
-        )}
-
-        {/* Timeline */}
-        {project.startDate && (
-          <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
-              <HugeiconsIcon icon={Calendar02Icon} size={12} strokeWidth={2} />
-              timeline
-            </div>
-            <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
-              {(() => {
-                const start = formatMonth(project.startDate!);
-                const end = project.endDate
-                  ? formatMonth(project.endDate)
-                  : "Present";
-                if (start === end) return start;
-                return (
-                  <>
-                    {start}
-                    <span className="px-2 font-semibold text-stone-400">→</span>
-                    {end}
-                  </>
-                );
-              })()}
-            </p>
-          </div>
-        )}
-
-        {/* Duration */}
-        {project.startDate && (
-          <div className="shrink-0">
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-stone-400 mb-3">
-              <HugeiconsIcon icon={Clock04Icon} size={12} strokeWidth={2} />
-              duration
-            </div>
-            <p className="text-lg font-semibold text-stone-700 whitespace-nowrap">
-              {calcDuration(project.startDate, project.endDate)}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <Separator className="" />
-
-      {/* Content sections */}
-      <div className="mt-4">
-        <ContentRenderer content={project.content} />
-      </div>
-    </main>
+      </main>
+    </ViewTransition>
   );
 }

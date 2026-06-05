@@ -87,7 +87,10 @@ export function ActionBar() {
   };
 
   return (
-    <div className="fixed bottom-12 inset-x-0 z-50 flex justify-center pointer-events-none px-6">
+    <div
+      className="fixed bottom-12 inset-x-0 z-50 flex justify-center pointer-events-none px-6"
+      style={{ viewTransitionName: "action-bar" }}
+    >
       <div className="pointer-events-auto">
         <motion.div
           ref={barRef}
@@ -182,7 +185,7 @@ export function ActionBar() {
           ) : (
             <div className="flex h-full items-center px-2 whitespace-nowrap">
               <motion.button
-                onClick={() => router.back()}
+                onClick={() => router.push("/work", { transitionTypes: ["nav-back"] })}
                 aria-label="Go back"
                 className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600 cursor-pointer"
                 whileHover={{ scale: 0.93 }}

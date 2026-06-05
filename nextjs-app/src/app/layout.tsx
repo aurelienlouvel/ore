@@ -4,11 +4,14 @@ import { unstable_cache } from "next/cache";
 import "./globals.css";
 import { ActionBar } from "@/components/ActionBar";
 import { ActionBarProvider } from "@/contexts/ActionBarContext";
-import { ClientAnimationProvider } from "@/components/ClientAnimationProvider";
 import { ScrollInit } from "@/components/ScrollInit";
 import { PlayCanvasMount } from "@/components/play/PlayCanvasMount";
+import { BodyTheme } from "@/components/BodyTheme";
 import { client } from "@/sanity/client";
-import { artifactsCanvasQuery, type ArtifactCanvasItem } from "@/sanity/queries";
+import {
+  artifactsCanvasQuery,
+  type ArtifactCanvasItem,
+} from "@/sanity/queries";
 
 const neueMontreal = localFont({
   src: "./fonts/PPNeueMontreal-Variable.ttf",
@@ -21,7 +24,6 @@ export const metadata: Metadata = {
   description: "aurélien louvel's internet space",
 };
 
-// Fetch les artifacts pour le canvas /play — mis en cache 5 min.
 const getCachedArtifacts = unstable_cache(
   async (): Promise<ArtifactCanvasItem[]> =>
     client.fetch<ArtifactCanvasItem[]>(artifactsCanvasQuery),
@@ -34,19 +36,18 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Ne bloque jamais le rendu — si Sanity est down le canvas est juste vide
-  const artifacts = await getCachedArtifacts().catch(() => [] as ArtifactCanvasItem[]);
+  const artifacts = await getCachedArtifacts().catch(
+    () => [] as ArtifactCanvasItem[],
+  );
 
   return (
     <html lang="en" className={`${neueMontreal.variable} antialiased`}>
-      <body className="min-h-dvh bg-background text-foreground">
+      <body className="min-h-dvh bg-white text-foreground">
+        <BodyTheme />
         <ActionBarProvider>
-          {/* Canvas persistant — monté au premier passage sur /play, jamais démonté après */}
           <PlayCanvasMount artifacts={artifacts} />
           <ScrollInit />
-          <ClientAnimationProvider>
-            {children}
-          </ClientAnimationProvider>
+          {children}
           <ActionBar />
         </ActionBarProvider>
       </body>
