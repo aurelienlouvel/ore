@@ -12,6 +12,11 @@ export function ProjectPageClient({
 }) {
   const { setProject, clearProject } = useActionBar();
 
+  // Scroll immédiat en haut à l'arrivée sur la page projet
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
   useEffect(() => {
     setProject({ title, redirectUrl });
     return () => clearProject();

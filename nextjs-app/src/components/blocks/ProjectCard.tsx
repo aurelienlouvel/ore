@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import Link from "next/link";
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import type { ProjectListItem } from "@/sanity/queries";
+import { SCROLL_KEY } from "@/components/WorkScrollRestore";
 
 interface ProjectCardProps {
   project: ProjectListItem;
@@ -36,6 +37,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       href={`/work/${project.slug}`}
       className="group block transition-transform duration-300 hover:scale-[0.97]"
       transitionTypes={['nav-forward']}
+      onClick={() => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))}
     >
       <div className="relative overflow-hidden rounded-xl bg-muted">
         {mediaUrl && isVideo ? (
