@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
 import { thumbnailRatio } from "@/lib/thumbnail-ratios";
 import type { ProjectListItem } from "@/sanity/queries";
-import { SCROLL_KEY } from "@/components/WorkScrollRestore";
+import { getScrollY, WORK_SCROLL_KEY } from "@/lib/scroll";
 
 interface ProjectCardProps {
   project: ProjectListItem;
@@ -40,7 +40,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       href={`/work/${project.slug}`}
       className="group block transition-transform duration-300 hover:scale-[0.97]"
       transitionTypes={['nav-forward']}
-      onClick={() => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))}
+      onClick={() => sessionStorage.setItem(WORK_SCROLL_KEY, String(getScrollY()))}
     >
       {/* Ratio réservé (bg-muted gris) avant chargement → zéro layout shift,
           scroll/animations robustes. Le média remplit la boîte (object-cover ;

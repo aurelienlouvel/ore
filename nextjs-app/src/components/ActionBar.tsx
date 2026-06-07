@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { motion, AnimatePresence, useMotionValue, animate } from "motion/react";
 import { useActionBar } from "@/contexts/ActionBarContext";
+import { markWorkReturn } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -197,7 +198,13 @@ export function ActionBar() {
           ) : (
             <div className="flex h-full items-center px-2 whitespace-nowrap">
               <motion.button
-                onClick={() => router.push("/work", { transitionTypes: ["nav-back"] })}
+                onClick={() => {
+                  markWorkReturn(); // la grille ne rejoue pas son intro au retour
+                  router.push("/work", {
+                    scroll: false, // pas de scroll-to-top Next : PageShell restaure la position
+                    transitionTypes: ["nav-back"],
+                  });
+                }}
                 aria-label="Go back"
                 className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-600 cursor-pointer"
                 whileHover={{ scale: 0.93 }}

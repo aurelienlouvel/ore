@@ -1,11 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import LocomotiveScroll from "locomotive-scroll";
+import { registerScroll, unregisterScroll } from "@/lib/scroll";
 
+// /work et /work/* gèrent leur scroll via <PageShell> (container fixe).
+const isShellRoute = (p: string) => p === "/work" || p.startsWith("/work/");
+
+/**
+ * Smooth-scroll sur `window` pour les routes SANS PageShell (/play, /info, …).
+ * Sur les routes work, PageShell crée son propre Lenis scopé au container, donc
+ * ici on ne fait rien (sinon deux Lenis en conflit).
+ */
 export function ScrollInit() {
+  const pathname = usePathname();
+
   useEffect(() => {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    if (isShellRoute(pathname)) return;
+
     const locomotiveScroll = new LocomotiveScroll({
       lenisOptions: {
         wrapper: window,
@@ -17,10 +31,16 @@ export function ScrollInit() {
         smoothWheel: true,
         wheelMultiplier: 1,
         touchMultiplier: 2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       },
     });
-    return () => locomotiveScroll.destroy();
-  }, []);
+    registerScroll(locomotiveScroll, null);
+
+    return () => {
+      unregisterScroll(locomotiveScroll);
+      locomotiveScroll.destroy();
+    };
+  }, [pathname]);
+
   return null;
 }

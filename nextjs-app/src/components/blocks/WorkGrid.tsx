@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, type Variants } from "motion/react";
 import type { ProjectListItem } from "@/sanity/queries";
 import { ProjectCard } from "./ProjectCard";
 import { EASE_IN } from "@/lib/easings";
+import { peekWorkReturn, clearWorkReturn } from "@/lib/scroll";
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 function toColumns<T>(items: T[], n: number): T[][] {
@@ -103,11 +104,22 @@ const cardVariants: Variants = {
 
 // ─── WorkGrid ─────────────────────────────────────────────────────────────────
 export function WorkGrid({ projects }: { projects: ProjectListItem[] }) {
-  const [shown, setShown] = useState(false);
+  // Retour depuis un projet (bouton retour) → pas d'intro : les cards sont
+  // visibles dès le 1er rendu, donc le snapshot de la View Transition nav-back
+  // montre la grille complète (et pas une grille vide qui se remplit après).
+  const returnRef = useRef<boolean | null>(null);
+  if (returnRef.current === null) returnRef.current = peekWorkReturn();
+  const isReturning = returnRef.current;
+
+  const [shown, setShown] = useState(isReturning);
   useEffect(() => {
+    if (isReturning) {
+      clearWorkReturn();
+      return;
+    }
     const id = requestAnimationFrame(() => setShown(true));
     return () => cancelAnimationFrame(id);
-  }, []);
+  }, [isReturning]);
   const animate = shown ? "visible" : "hidden";
   const n = projects.length;
 
@@ -122,7 +134,7 @@ export function WorkGrid({ projects }: { projects: ProjectListItem[] }) {
       key={p._id}
       variants={cardVariants}
       custom={{ i: globalIdx, n, col: colIdx, row: rowIdx, numCols }}
-      initial="hidden"
+      initial={isReturning ? "visible" : "hidden"}
       animate={animate}
       exit="exit"
     >

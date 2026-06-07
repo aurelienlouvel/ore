@@ -14,6 +14,7 @@ import { ProjectMediaBlock } from "@/components/blocks/ProjectMediaBlock";
 import { MatesBlock } from "@/components/blocks/MatesBlock";
 import { ContentRenderer } from "@/components/blocks/ContentRenderer";
 import { ProjectPageClient } from "./ProjectPageClient";
+import { PageShell } from "@/components/PageShell";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Separator } from "@/components/ui/Separator";
 import {
@@ -51,12 +52,14 @@ export default async function ProjectPage({
       exit={{ "nav-back": "view-transition-exit-back", default: "none" }}
       default="none"
     >
-      <main className="w-full bg-white rounded-t-2xl">
-        <div className="mx-auto max-w-5xl pt-4 sm:pt-16 sm:pb-64 ">
+      <PageShell restore="top">
+        <main className="w-full bg-white rounded-t-2xl">
+          <div className="mx-auto max-w-5xl pt-4 sm:pt-16 sm:pb-64">
           <ProjectPageClient
             title={project.title}
             redirectUrl={project.redirectUrl}
           />
+
           <div className="px-16 py-12">
             <h1 className="max-w-[820] text-pretty mb-8">{project.title}</h1>
 
@@ -102,7 +105,6 @@ export default async function ProjectPage({
             />
           )}
 
-          {/* Metadata sections below media */}
           <div className="px-16 py-12 flex flex-wrap gap-12">
             {/* Role */}
             {project.roles && project.roles.length > 0 && (
@@ -170,14 +172,14 @@ export default async function ProjectPage({
             )}
           </div>
 
-          <Separator className="" />
+          <Separator />
 
-          {/* Content sections */}
           <div className="mt-4">
             <ContentRenderer content={project.content} />
           </div>
-        </div>
-      </main>
+          </div>
+        </main>
+      </PageShell>
     </ViewTransition>
   );
 }

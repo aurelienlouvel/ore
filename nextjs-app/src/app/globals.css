@@ -214,6 +214,13 @@
     html::-webkit-scrollbar {
         display: none;
     }
+    /* Container de scroll des pages work/projet (PageShell) — scrollbar masquée */
+    .page-shell {
+        scrollbar-width: none;
+    }
+    .page-shell::-webkit-scrollbar {
+        display: none;
+    }
     h1,
     h2,
     h3,
