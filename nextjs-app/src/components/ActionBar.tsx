@@ -99,9 +99,21 @@ export function ActionBar() {
         >
           {mode === "nav" ? (
             <div className="flex h-full items-center px-2 whitespace-nowrap">
-              <Link href="/work" className="flex h-11 items-center pl-3">
+              <Link
+                href="/work"
+                className="flex h-11 shrink-0 items-center pl-3"
+              >
+                {/* width/height explicites → la largeur est réservée AVANT le
+                    chargement (aspect-ratio 640/240), donc la mesure de largeur
+                    de la barre inclut le logo ; shrink-0 → jamais écrasé à 0. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="oré" className="h-5 w-auto" />
+                <img
+                  src="/logo.png"
+                  alt="oré"
+                  width={640}
+                  height={240}
+                  className="h-5 w-auto shrink-0"
+                />
               </Link>
 
               {sep}
