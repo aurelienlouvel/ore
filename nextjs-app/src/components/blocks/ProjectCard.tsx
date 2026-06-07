@@ -2,7 +2,9 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { fileRefToUrl, isVideoRef } from "@/lib/sanity-utils";
+import { thumbnailRatio } from "@/lib/thumbnail-ratios";
 import type { ProjectListItem } from "@/sanity/queries";
 import { SCROLL_KEY } from "@/components/WorkScrollRestore";
 
@@ -13,6 +15,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   const mediaUrl = fileRefToUrl(project.thumbnailRef);
   const isVideo = isVideoRef(project.thumbnailRef);
+  const ratio = thumbnailRatio(project.thumbnailRef);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -39,27 +42,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
       transitionTypes={['nav-forward']}
       onClick={() => sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))}
     >
-      <div className="relative overflow-hidden rounded-xl bg-muted">
+      {/* Ratio réservé (bg-muted gris) avant chargement → zéro layout shift,
+          scroll/animations robustes. Le média remplit la boîte (object-cover ;
+          ratio = ratio natif mesuré, donc aucun crop). */}
+      <div
+        className="relative overflow-hidden rounded-xl bg-muted"
+        style={{ aspectRatio: ratio }}
+      >
         {mediaUrl && isVideo ? (
           <video
             ref={videoRef}
             src={mediaUrl}
-            className="block h-auto w-full"
+            className="absolute inset-0 h-full w-full object-cover"
             muted
             loop
             playsInline
             preload="none"
           />
         ) : mediaUrl ? (
-          <img
+          <Image
             src={mediaUrl}
             alt={project.title}
-            className="block h-auto w-full"
-            loading="lazy"
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            className="object-cover"
           />
-        ) : (
-          <div className="aspect-video bg-muted" />
-        )}
+        ) : null}
 
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 overflow-hidden p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-zinc-100 bg-white px-2.5 py-2 text-sm text-zinc-800">
