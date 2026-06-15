@@ -8,10 +8,9 @@ import type LocomotiveScroll from "locomotive-scroll";
  *   pointe sur ce container, pour une View Transition propre même scrollé.
  * - /play, /info scrollent sur `window` → `scrollEl` est null.
  *
- * Lenis pilote le scroll : un `scrollTo` natif est écrasé au tick rAF suivant, et
- * après une navigation Lenis garde des dimensions périmées. Pour des sauts
- * FIABLES on agit sur les deux : natif (snapshot VT synchrone) + Lenis (état
- * interne) + resize (hauteur post-nav).
+ * Lenis pilote le scroll : un `scrollTo` natif est écrasé au tick rAF suivant.
+ * Pour des sauts FIABLES on agit sur les deux : natif (snapshot VT synchrone) +
+ * Lenis (état interne).
  */
 let loco: LocomotiveScroll | null = null;
 let scrollEl: HTMLElement | null = null; // null = scroll document (window)
@@ -39,17 +38,6 @@ function setNativeScroll(y: number) {
 /** Position de scroll courante du container actif (vérité terrain). */
 export function getScrollY(): number {
   return scrollEl ? scrollEl.scrollTop : window.scrollY;
-}
-
-/** Scroll maximal atteignable du container actif. */
-export function getMaxScroll(): number {
-  if (scrollEl) return Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
-  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-}
-
-/** Recalcule les dimensions de scroll (après changement de page). */
-export function resizeScroll() {
-  loco?.resize();
 }
 
 /** Saut instantané vers le haut — natif + Lenis. */
