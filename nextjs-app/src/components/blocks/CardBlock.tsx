@@ -97,8 +97,6 @@ function CardItemComponent({ item }: { item: CardItem }) {
 
 export function CardBlock({ block }: { block: BlockCard }) {
   const items = block.items ?? [];
-  if (!items.length) return null;
-
   const n = Math.min(items.length, 3);
   const rotations = ROTATIONS[n] ?? ROTATIONS[3];
   const rowRef = useRef<HTMLDivElement>(null);
@@ -121,6 +119,8 @@ export function CardBlock({ block }: { block: BlockCard }) {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, [n]);
+
+  if (!items.length) return null;
 
   return (
     <div className="flex flex-col gap-6">
