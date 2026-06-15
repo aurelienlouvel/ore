@@ -73,7 +73,6 @@ function MediaCell({
             />
           </div>
         ) : item.videoFileUrl ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption
           <video
             src={item.videoFileUrl}
             autoPlay
@@ -132,7 +131,6 @@ function SingleLayout({ item }: { item: MediaItem }) {
             />
           </div>
         ) : item.videoFileUrl ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption
           <video
             src={item.videoFileUrl}
             autoPlay

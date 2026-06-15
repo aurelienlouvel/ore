@@ -76,6 +76,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           {project.organisation && (
             <span className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-lg border border-zinc-100 bg-white px-2.5 py-2 text-sm text-zinc-800">
               {project.organisation.logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={project.organisation.logoUrl}
                   alt=""

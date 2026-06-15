@@ -4,7 +4,7 @@ export function QuoteBlock({ block }: { block: BlockQuote }) {
   return (
     <figure className="flex flex-col gap-5">
       <div className="text-5xl text-stone-200 font-serif leading-none select-none">
-        "
+        &quot;
       </div>
       <blockquote className="text-xl font-medium text-stone-800 leading-relaxed -mt-2">
         {block.quote}

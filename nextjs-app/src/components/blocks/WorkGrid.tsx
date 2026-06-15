@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, type Variants } from "motion/react";
 import type { ProjectListItem } from "@/sanity/queries";
 import { ProjectCard } from "./ProjectCard";
@@ -107,9 +107,9 @@ export function WorkGrid({ projects }: { projects: ProjectListItem[] }) {
   // Retour depuis un projet (bouton retour) → pas d'intro : les cards sont
   // visibles dès le 1er rendu, donc le snapshot de la View Transition nav-back
   // montre la grille complète (et pas une grille vide qui se remplit après).
-  const returnRef = useRef<boolean | null>(null);
-  if (returnRef.current === null) returnRef.current = peekWorkReturn();
-  const isReturning = returnRef.current;
+  // Lu une seule fois au montage (lazy init) — pas de lecture de ref pendant
+  // le render. peekWorkReturn() lit un flag module posé par le bouton retour.
+  const [isReturning] = useState(() => peekWorkReturn());
 
   const [shown, setShown] = useState(isReturning);
   useEffect(() => {
