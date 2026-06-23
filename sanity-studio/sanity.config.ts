@@ -11,7 +11,10 @@ import {
   TagNavIcon,
   OrganisationNavIcon,
   PersonNavIcon,
+  ProfileNavIcon,
   RoleNavIcon,
+  ToolNavIcon,
+  EducationNavIcon,
 } from './schemaTypes/components/navIcons'
 
 export default defineConfig({
@@ -27,6 +30,12 @@ export default defineConfig({
         S.list()
           .title('Content')
           .items([
+            S.listItem()
+              .title('Profile')
+              .icon(ProfileNavIcon)
+              .child(
+                S.document().schemaType('profile').documentId('profile').title('Profile'),
+              ),
             orderableDocumentListDeskItem({
               type: 'project',
               title: 'Project',
@@ -48,7 +57,15 @@ export default defineConfig({
               S,
               context,
             }),
+            orderableDocumentListDeskItem({
+              type: 'education',
+              title: 'Education',
+              icon: EducationNavIcon,
+              S,
+              context,
+            }),
             S.documentTypeListItem('contractType').title('Contract type').icon(ContractTypeNavIcon),
+            S.documentTypeListItem('tool').title('Tool').icon(ToolNavIcon),
             S.documentTypeListItem('tag').title('Tag').icon(TagNavIcon),
             S.documentTypeListItem('organisation').title('Organisation').icon(OrganisationNavIcon),
             S.documentTypeListItem('person').title('Person').icon(PersonNavIcon),

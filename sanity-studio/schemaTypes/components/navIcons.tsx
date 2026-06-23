@@ -4,10 +4,13 @@ import {
   TagIcon,
   Building03Icon,
   UserIcon,
+  UserCircleIcon,
   CapIcon,
   TokenCircleIcon,
   Briefcase01Icon,
   ContentWritingIcon,
+  Wrench01Icon,
+  GraduationScrollIcon,
 } from '@hugeicons/core-free-icons'
 
 export const ProjectNavIcon = () => (
@@ -22,6 +25,9 @@ export const OrganisationNavIcon = () => (
 export const PersonNavIcon = () => (
   <HugeiconsIcon icon={UserIcon} size={17} color="currentColor" />
 )
+export const ProfileNavIcon = () => (
+  <HugeiconsIcon icon={UserCircleIcon} size={17} color="currentColor" />
+)
 export const RoleNavIcon = () => (
   <HugeiconsIcon icon={CapIcon} size={17} color="currentColor" />
 )
@@ -33,4 +39,10 @@ export const ExperienceNavIcon = () => (
 )
 export const ContractTypeNavIcon = () => (
   <HugeiconsIcon icon={ContentWritingIcon} size={17} color="currentColor" />
+)
+export const ToolNavIcon = () => (
+  <HugeiconsIcon icon={Wrench01Icon} size={17} color="currentColor" />
+)
+export const EducationNavIcon = () => (
+  <HugeiconsIcon icon={GraduationScrollIcon} size={17} color="currentColor" />
 )

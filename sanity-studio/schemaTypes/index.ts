@@ -2,6 +2,8 @@ import {tagType} from './tag'
 import {roleType} from './role'
 import {organisationType} from './organisation'
 import {personType} from './person'
+import {profileType} from './profile'
+import {toolType} from './tool'
 import {
   blockText,
   blockMedia,
@@ -14,6 +16,7 @@ import {
 import {artifactType} from './artifact'
 import {contractTypeType} from './contractType'
 import {experienceType} from './experience'
+import {educationType} from './education'
 import {projectType} from './project'
 
 export const schemaTypes = [
@@ -34,5 +37,8 @@ export const schemaTypes = [
   artifactType,
   contractTypeType,
   experienceType,
+  educationType,
   projectType,
+  profileType,
+  toolType,
 ]
