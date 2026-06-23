@@ -6,7 +6,7 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { buildImageUrl } from "@/lib/sanity-image";
-import { CARD_W, CARD_H, getArtifactImageUrl, introState, outroState, OUTRO_DURATION, OUTRO_STAGGER_MAX } from "@/lib/artifact-utils";
+import { CARD_W, CARD_H, getArtifactImageUrl, introState, outroState, OUTRO_DURATION, OUTRO_STAGGER_MAX, focusState, DIM_OPACITY } from "@/lib/artifact-utils";
 import { easeOutExpo, easeOutBack } from "@/lib/easings";
 
 export { CARD_W, CARD_H, getArtifactImageUrl };
@@ -139,8 +139,9 @@ function CornerBrackets({
     const mat = meshRef.current.material as THREE.MeshBasicMaterial;
 
     // ── Hover entry: jump to OFF_START so the approaching animation is visible ──
+    // Pas de "ré-approche" des brackets si la card est déjà sélectionnée
     const justHovered = hovered && !prevHovered.current;
-    if (justHovered) offAnim.current = OFF_START;
+    if (justHovered && !isSelected) offAnim.current = OFF_START;
     prevHovered.current = hovered;
 
     // ── Opacity: 0 idle, 0.75 hover, 1 selected ─────────────────────────────────
@@ -189,6 +190,17 @@ type SharedProps = {
 const INTRO_DURATION    = 520;
 const INTRO_STAGGER_MAX = 240; // more spread → visible wave effect
 
+// ─── Focus dim config ─────────────────────────────────────────────────────────
+//  Quand un item est sélectionné, les autres cards se replient : scale ↓ +
+//  fondu d'opacité (pas de rotation), et deviennent non-cliquables.
+const DIM_LERP  = 0.12; // vitesse du repli (lerp/frame)
+const DIM_SCALE = 0.22; // réduction d'échelle au repli (→ 78 %)
+
+// Raycast on/off : une card repliée ne doit pas intercepter le clic (le clic
+// la traverse → onPointerMissed → désélection).
+const DEFAULT_RAYCAST: THREE.Mesh["raycast"] = THREE.Mesh.prototype.raycast;
+const NOOP_RAYCAST: THREE.Mesh["raycast"] = () => {};
+
 // ─── MeshBody — image or video card ──────────────────────────────────────────
 function MeshBody({
   texture,
@@ -208,6 +220,8 @@ function MeshBody({
   const outroStaggerMs = staggerMs * (OUTRO_STAGGER_MAX / INTRO_STAGGER_MAX);
   // Légère inclinaison initiale (rendu organique) — se résorbe avec l'opacity.
   const introRot       = useRef((Math.random() - 0.5) * 0.16).current; // ±~4.6°
+  // Repli quand un AUTRE item est focus (scale ↓ + fade, sans rotation)
+  const dimAnim        = useRef(0);
   const [hovered, setHovered] = useState(false);
 
   const w = CARD_W * cardScale;
@@ -244,14 +258,31 @@ function MeshBody({
     const scaleBoost = outro.current.done ? intro.current.scaleBoost : outro.current.scaleBoost;
 
     const mat = meshRef.current?.material as THREE.MeshBasicMaterial | undefined;
-    if (mat) mat.opacity = opacity;
 
     // ── Selection spring ─────────────────────────────────────────────────────
     const selTarget = isSelected ? 1.04 : 1;
     selAnim.current += (selTarget - selAnim.current) * 0.12;
-    meshRef.current?.scale.setScalar(selAnim.current * scaleBoost);
-    // Inclinaison initiale qui se redresse à mesure que la card apparaît
-    if (meshRef.current) meshRef.current.rotation.z = introRot * (1 - opacity);
+
+    // ── Focus dim : les autres cards se replient quand un item est focus ──────
+    const dimmed = focusState.isActive && !isSelected;
+    if (isSelected) {
+      dimAnim.current = 0; // snap : la card sélectionnée ne doit jamais être dimmée
+    } else {
+      dimAnim.current += ((dimmed ? 1 : 0) - dimAnim.current) * DIM_LERP;
+      if (dimAnim.current < 0.001) dimAnim.current = 0;
+    }
+    const dim = dimAnim.current;
+
+    const finalOpacity = opacity * (1 - (1 - DIM_OPACITY) * dim);
+    if (mat) mat.opacity = finalOpacity;
+
+    meshRef.current?.scale.setScalar(selAnim.current * scaleBoost * (1 - DIM_SCALE * dim));
+    if (meshRef.current) {
+      meshRef.current.rotation.z = introRot * (1 - opacity);
+      meshRef.current.visible    = finalOpacity > 0.001;
+      // repliée → non-cliquable (le clic traverse et désélectionne)
+      meshRef.current.raycast    = dimmed ? NOOP_RAYCAST : DEFAULT_RAYCAST;
+    }
   });
 
   return (
@@ -287,9 +318,29 @@ function PlaceholderMesh({
   const groupRef = useRef<THREE.Group>(null);
   const meshRef  = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  // Repli quand un autre item est focus (scale ↓ + fade, cohérent avec MeshBody)
+  const dimAnim = useRef(0);
 
   const w = CARD_W * cardScale;
   const h = cardH  * cardScale;
+
+  useFrame(() => {
+    const dimmed = focusState.isActive && !isSelected;
+    if (isSelected) {
+      dimAnim.current = 0;
+    } else {
+      dimAnim.current += ((dimmed ? 1 : 0) - dimAnim.current) * DIM_LERP;
+      if (dimAnim.current < 0.001) dimAnim.current = 0;
+    }
+    const dim = dimAnim.current;
+    const mat = meshRef.current?.material as THREE.MeshBasicMaterial | undefined;
+    if (mat) mat.opacity = 1 - (1 - DIM_OPACITY) * dim;
+    meshRef.current?.scale.setScalar(1 - DIM_SCALE * dim);
+    if (meshRef.current) {
+      meshRef.current.visible = 1 - dim > 0.001;
+      meshRef.current.raycast = dimmed ? NOOP_RAYCAST : DEFAULT_RAYCAST;
+    }
+  });
 
   return (
     <group ref={groupRef} position={[worldPos[0], worldPos[1], 0]}>

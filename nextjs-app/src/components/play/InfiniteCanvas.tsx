@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { motion, AnimatePresence, useMotionValue, type MotionValue } from "motion/react";
 import * as THREE from "three";
 import type { ArtifactCanvasItem } from "@/sanity/queries";
 import { ArtifactMesh, CARD_W, CARD_H } from "./ArtifactMesh";
-import { getCardHeight, _videoDimsCache, MIN_CARD_H, MAX_CARD_H, triggerIntro } from "@/lib/artifact-utils";
+import { getCardHeight, _videoDimsCache, MIN_CARD_H, MAX_CARD_H, triggerIntro, focusState } from "@/lib/artifact-utils";
 import { easeOutExpo, easeZoom } from "@/lib/easings";
 import { ArtifactInfo } from "./ArtifactInfo";
 
@@ -29,7 +29,6 @@ type Params = {
   scaleMin:    number; // smallest card scale
   scaleMax:    number; // largest  card scale
   // ── Camera (live — no rebuild) ───────────────────────────────────────────────
-  focusZoom:   number; // orthographic zoom when an item is selected
   camOffsetX:  number; // camera shifts right on focus (card left, panel fits right)
   focusVCenter: number; // vertical position of focused item (0=top · 0.5=center · 1=bottom)
   // ── Info panel (live) ────────────────────────────────────────────────────────
@@ -41,31 +40,65 @@ type Params = {
 
 const DEFAULT_PARAMS: Params = {
   cols:        4,
-  gapX:        300,
-  gapY:        260,
+  gapX:        280,
+  gapY:        150,   // masonry : écart vertical CONSTANT entre cards (sur hauteurs réelles)
   colStagger:  200,
-  jitterX:     40,
-  jitterY:     40,
+  jitterX:     30,
+  jitterY:     90,    // variation verticale ORGANIQUE en plus (toujours ≥ 0)
   minPerTile:  40,
-  scaleMin:    0.75,
-  scaleMax:    1.25,
-  focusZoom:    2.0,
-  camOffsetX:   200,
-  focusVCenter: 0.44,
+  scaleMin:    0.80,
+  scaleMax:    1.15,
+  camOffsetX:   220,
+  focusVCenter: 0.5,
   gapPanel:    80,
-  gridCell:    80,
+  gridCell:    64,
   dotRadius:   2.0,
 };
+
+// ─── Responsive layout ─────────────────────────────────────────────────────────
+//  Mobile (≤768px) : grille verticale (1 colonne) — feed qu'on scrolle de haut
+//  en bas. Desktop : masonry multi-colonnes (defaults ci-dessus).
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_LAYOUT: Partial<Params> = {
+  cols: 1, gapX: 180, gapY: 140, colStagger: 0,
+  jitterX: 20, jitterY: 70, scaleMin: 0.80, scaleMax: 1.0,
+};
+const LAYOUT_KEYS = [
+  "cols", "gapX", "gapY", "colStagger", "jitterX", "jitterY", "scaleMin", "scaleMax",
+] as const;
+function applyResponsiveLayout(p: Params, mobile: boolean) {
+  const src = mobile ? { ...DEFAULT_PARAMS, ...MOBILE_LAYOUT } : DEFAULT_PARAMS;
+  for (const k of LAYOUT_KEYS) p[k] = src[k];
+}
+
+// ─── Adaptive focus zoom ───────────────────────────────────────────────────────
+//  Au select, le zoom fait RENTRER la card dans une boîte cible (largeur/hauteur
+//  max) → toutes les cards focus ont ~la même taille, bornée. Desktop : card à
+//  gauche (panel à droite). Mobile : card en haut (panel dessous).
+const FOCUS_MIN_ZOOM = 0.85;
+const FOCUS_MAX_ZOOM = 3.8;
+//  Boîte cible : on PRIORISE la hauteur (h) → toutes les cards focus tendent vers
+//  la même hauteur. wMax n'est qu'un garde-fou (généreux) pour que les cards très
+//  larges (paysage) ne débordent pas — elles apparaissent donc plus grosses.
+function focusBox(vw: number, vh: number, mobile: boolean) {
+  return mobile
+    ? { h: vh * 0.52, wMax: vw * 0.94 }
+    : { h: vh * 0.82, wMax: Math.min(vw * 0.56, 820) };
+}
+function computeFocusZoom(worldW: number, worldH: number, vw: number, vh: number, mobile: boolean) {
+  const { h, wMax } = focusBox(vw, vh, mobile);
+  const z = Math.min(h / worldH, wMax / worldW); // hauteur prioritaire, largeur = cap
+  return Math.max(FOCUS_MIN_ZOOM, Math.min(FOCUS_MAX_ZOOM, z));
+}
 
 // Approximate min/max visual gap between adjacent card edges
 function gapStats(p: Params) {
   const cellW = CARD_W + p.gapX;
-  const cellH = CARD_H + p.gapY;
   return {
     minGapX: Math.round(cellW - 2 * p.jitterX - CARD_W * p.scaleMax),
     maxGapX: Math.round(cellW + 2 * p.jitterX - CARD_W * p.scaleMin),
-    minGapY: Math.round(cellH - 2 * p.jitterY - CARD_H * p.scaleMax),
-    maxGapY: Math.round(cellH + 2 * p.jitterY - CARD_H * p.scaleMin),
+    minGapY: Math.round(p.gapY),               // masonry : écart vertical direct
+    maxGapY: Math.round(p.gapY + p.jitterY),    // + variation organique (≥ 0)
   };
 }
 
@@ -120,7 +153,6 @@ function buildTile(artifacts: ArtifactCanvasItem[], p: Params) {
   const rows = Math.ceil(n / COLS);
 
   const TILE_W = COLS * (CARD_W + GAP_X);
-  const TILE_H = rows * (CARD_H + GAP_Y) + COL_STAGGER;
 
   const stagger = Array.from({ length: COLS }, (_, c) =>
     seededRand(c * 97 + 13) * COL_STAGGER,
@@ -230,12 +262,27 @@ function buildTile(artifacts: ArtifactCanvasItem[], p: Params) {
     getCardHeight(artifacts[assignment[i]]),
   );
 
-  // Positions finales avec les vraies hauteurs — centrage vertical correct
+  // ── Empilement masonry par colonne ──────────────────────────────────────────
+  //  Chaque colonne empile ses cards avec un écart vertical ≥ GAP_Y, calculé sur
+  //  les hauteurs RÉELLES → plus aucune paire trop proche, quels que soient les
+  //  ratios. JITTER_Y ajoute une variation organique (toujours ≥ 0 → l'écart
+  //  minimum reste homogène). TILE_H = colonne la plus haute → au raccord de
+  //  tuilage l'écart est ≥ GAP_Y, jamais de chevauchement.
+  const centerY = new Array<number>(n).fill(0);
+  const cursor  = stagger.slice(); // bord haut courant par colonne
+  for (let i = 0; i < n; i++) {
+    const c = i % COLS;
+    centerY[i] = cursor[c] + slotH[i] / 2;
+    cursor[c] += slotH[i] + GAP_Y + seededRand(i * 7 + 2) * JITTER_Y;
+  }
+  const TILE_H = Math.max(...cursor.map((b, c) => b - stagger[c]));
+
+  // Centrage du pavé (origine ≈ centre de masse)
   const cx = cssPos.reduce((s, q) => s + q.x + CARD_W / 2, 0) / n;
-  const cy = cssPos.reduce((s, q, i) => s + q.y + slotH[i] / 2, 0) / n;
+  const cy = centerY.reduce((s, y) => s + y, 0) / n;
   const positions: [number, number][] = cssPos.map((q, i) => [
     q.x + CARD_W / 2 - cx,
-    -(q.y + slotH[i] / 2 - cy),
+    -(centerY[i] - cy),
   ]);
 
   const items = Array.from({ length: n }, (_, i) => ({
@@ -307,13 +354,13 @@ function GridBackground({ paramsRef }: { paramsRef: React.MutableRefObject<Param
 //
 //  Intro zoom : time-based easeInOutExpo over INTRO_ZOOM_DURATION ms,
 //               starting INTRO_ZOOM_DELAY ms after `active` flips true.
-//  Focus snap : position + zoom animated together on the same easeOutExpo curve
-//               so they always arrive at the same instant (no disjoint easing).
+//  Focus snap : position + zoom animated together on easeInOutBack (overshoot +
+//               settle doux, cohérent avec easeZoom du dezoom intro).
 //  Exit focus : exponential lerp on zoom only (instant-feel, no duration overhead).
 //
 // Arrivée /play : onde des dots + vague des cards + dézoom démarrent EN MÊME TEMPS.
 const INTRO_ZOOM_DURATION = 1050; // ms — dézoom caméra 0.5→1
-const FOCUS_DURATION      = 500;  // ms — focus snap
+const FOCUS_DURATION      = 750;  // ms — focus snap
 // Panel appears once media is nearly stable (Framer Motion delay, not a timer)
 const PANEL_DELAY_S       = (FOCUS_DURATION * 0.75) / 1000; // seconds for Framer Motion
 
@@ -435,7 +482,7 @@ function CameraController({
       if (t >= 1) { cam.zoom = 1.0; zoomAnim.current = null; }
 
     } else if (focusAnim.current) {
-      // Focus: position + zoom move on the same easeOutCubic curve
+      // Focus: position + zoom — easeOutExpo, smooth decel, no bounce
       const elapsed = performance.now() - focusAnim.current.startTime;
       const t       = Math.min(1, elapsed / FOCUS_DURATION);
       const ease    = easeOutExpo(t);
@@ -475,7 +522,7 @@ function CameraController({
 
 // ─── Panel positioner ─────────────────────────────────────────────────────────
 function PanelPositioner({
-  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef,
+  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, isMobile,
 }: {
   worldPosRef: React.MutableRefObject<[number, number] | null>;
   halfWRef:    React.MutableRefObject<number>;
@@ -483,6 +530,7 @@ function PanelPositioner({
   panelX:      MotionValue<number>;
   panelY:      MotionValue<number>;
   paramsRef:   React.MutableRefObject<Params>;
+  isMobile:    boolean;
 }) {
   const { camera, size } = useThree();
 
@@ -492,8 +540,18 @@ function PanelPositioner({
     const cam = camera as THREE.OrthographicCamera;
     const sx  = (wp[0] - cam.position.x) * cam.zoom + size.width  / 2;
     const sy  = -(wp[1] - cam.position.y) * cam.zoom + size.height / 2;
-    panelX.set(sx + halfWRef.current * cam.zoom + paramsRef.current.gapPanel);
-    panelY.set(sy - halfHRef.current * cam.zoom); // card top edge
+    const halfW = halfWRef.current * cam.zoom;
+    const halfH = halfHRef.current * cam.zoom;
+    const gap   = paramsRef.current.gapPanel;
+    if (isMobile) {
+      // panel sous la card, aligné sur son bord gauche
+      panelX.set(sx - halfW);
+      panelY.set(sy + halfH + gap);
+    } else {
+      // panel à droite de la card, aligné en haut
+      panelX.set(sx + halfW + gap);
+      panelY.set(sy - halfH);
+    }
   });
 
   return null;
@@ -503,7 +561,7 @@ function PanelPositioner({
 function InfiniteTiles({
   tile, videoTextures, selected, onSelect,
   selectTarget, zoomTarget, focusExitRef,
-  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, active, running, introKey,
+  worldPosRef, halfWRef, halfHRef, panelX, panelY, paramsRef, active, running, introKey, isMobile,
 }: {
   tile:          ReturnType<typeof buildTile>;
   videoTextures: Map<string, THREE.VideoTexture>;
@@ -521,6 +579,7 @@ function InfiniteTiles({
   active:        boolean;
   running:       boolean;
   introKey:      number;
+  isMobile:      boolean;
 }) {
   const { camera } = useThree();
   const { TILE_W, TILE_H, items, positions } = tile;
@@ -540,6 +599,9 @@ function InfiniteTiles({
   }, [TILE_W, TILE_H]);
 
   useFrame(() => {
+    // Ne pas repositionner les tuiles pendant un focus — évite que la copie
+    // sélectionnée saute hors écran et soit remplacée par une copie dimmée.
+    if (selected) return;
     const tx = Math.round(camera.position.x / TILE_W);
     const ty = Math.round(camera.position.y / TILE_H);
     if (tx === prevTile.current.x && ty === prevTile.current.y) return;
@@ -572,6 +634,7 @@ function InfiniteTiles({
         panelX={panelX}
         panelY={panelY}
         paramsRef={paramsRef}
+        isMobile={isMobile}
       />
       {Array.from({ length: 9 }, (_, k) => {
         const dx = (k % 3) - 1;
@@ -657,7 +720,6 @@ function DebugPane({
 
       // ── Camera ──────────────────────────────────────────────────────────────
       const cam = pane.addFolder({ title: "Camera", expanded: false });
-      cam.addBinding(q, "focusZoom",    { label: "focus zoom",         min: 1.0, max: 3.0, step: 0.05 });
       cam.addBinding(q, "camOffsetX",   { label: "cam offset X",       min: 0,   max: 400, step: 5    });
       cam.addBinding(q, "focusVCenter", { label: "v-center (0↑ · 1↓)", min: 0.1, max: 0.9, step: 0.01 });
 
@@ -745,6 +807,10 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
   const [introKey, setIntroKey]   = useState(0);
   const readyRef                  = useRef(false);
 
+  // Responsive — grille verticale en mobile (≤768px)
+  const [isMobile, setIsMobile]   = useState(false);
+  const isMobileRef               = useRef(false);
+
   const paramsRef           = useRef<Params>({ ...DEFAULT_PARAMS });
   const selectTargetRef     = useRef<{ x: number; y: number } | null>(null);
   const selectedWorldPosRef = useRef<[number, number] | null>(null);
@@ -758,6 +824,21 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
   const panelY = useMotionValue(0);
 
   const handleLayoutChange = useCallback(() => setTileVersion(v => v + 1), []);
+
+  // Détecte mobile/desktop → bascule la grille (verticale ↔ masonry) + rebuild
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+    const apply = () => {
+      isMobileRef.current = mq.matches;
+      setIsMobile(mq.matches);
+      applyResponsiveLayout(paramsRef.current, mq.matches);
+      handleLayoutChange();
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [handleLayoutChange]);
 
   const tile = useMemo(
     () => buildTile(artifacts, paramsRef.current),
@@ -876,6 +957,12 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
 
   focusExitRef.current = handleDeselect;
 
+  // Sync focusState synchronously before browser paint (useLayoutEffect fires before
+  // rAF) so Three.js always reads the correct value on the very next frame.
+  useLayoutEffect(() => {
+    focusState.isActive = selected !== null;
+  }, [selected]);
+
   // Deselect panel when navigating away from /play
   useEffect(() => {
     if (!active) handleDeselect();
@@ -890,18 +977,27 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
       groupIdx: number,
       itemIdx:  number,
     ) => {
-      const q = paramsRef.current;
-      // Vertical bias: (0.5 - focusVCenter) * H / zoom  → item sits above center
-      const vBias = (0.5 - q.focusVCenter) * window.innerHeight / q.focusZoom;
-      setSelected({ artifact: item, groupIdx, itemIdx }); // focusState.isActive set by useLayoutEffect
-      selectTargetRef.current     = {
-        x: point[0] + q.camOffsetX / q.focusZoom,
-        y: point[1] - vBias,
-      };
+      const q      = paramsRef.current;
+      const mobile = isMobileRef.current;
+      const vw     = window.innerWidth;
+      const vh     = window.innerHeight;
+
+      // Zoom adaptatif : la card rentre dans une boîte cible (max W/H), donc
+      // toutes les cards focus apparaissent ~à la même taille. (*1.04 = pop sel.)
+      const z = computeFocusZoom(halfW * 2 * 1.04, halfH * 2 * 1.04, vw, vh, mobile);
+
+      // Cadrage caméra : card en haut (mobile, panel dessous) ou décalée à
+      // gauche (desktop, panel à droite).
+      const targetX = mobile ? point[0] : point[0] + q.camOffsetX / z;
+      const vFrac   = mobile ? 0.30 : q.focusVCenter; // centre card (0 haut · 1 bas)
+      const targetY = point[1] - (0.5 - vFrac) * vh / z;
+
+      setSelected({ artifact: item, groupIdx, itemIdx });
+      selectTargetRef.current     = { x: targetX, y: targetY };
       selectedWorldPosRef.current = point;
       selectedHalfWRef.current    = halfW;
       selectedHalfHRef.current    = halfH;
-      zoomTargetRef.current       = q.focusZoom;
+      zoomTargetRef.current       = z;
     },
     [],
   );
@@ -949,6 +1045,7 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
             active={active}
             running={running}
             introKey={introKey}
+            isMobile={isMobile}
           />
         </Canvas>
       </div>
@@ -965,7 +1062,7 @@ export function InfiniteCanvas({ artifacts, active = true, running = active }: {
             exit={{ opacity: 0, transition: { duration: 0.14, ease: "easeIn" } }}
           >
             <div className="pointer-events-auto">
-              <ArtifactInfo artifact={selected.artifact} scrambleDelayMs={PANEL_DELAY_S * 1000} />
+              <ArtifactInfo artifact={selected.artifact} />
             </div>
           </motion.div>
         )}
