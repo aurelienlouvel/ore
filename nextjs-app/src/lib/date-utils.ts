@@ -11,6 +11,15 @@ export function formatMonth(dateStr: string): string {
   );
 }
 
+export function formatDateTime(isoStr: string): string {
+  return new Date(isoStr).toLocaleString("en-US", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function calcDuration(start: string, end: string | null): string {
   const startDate = parseDate(start);
   const endDate = end ? parseDate(end) : new Date();

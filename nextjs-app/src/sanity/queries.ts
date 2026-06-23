@@ -252,3 +252,116 @@ export type ArtifactCanvasItem = {
   startDate: string | null;
   endDate: string | null;
 };
+
+// ─── Profile (Info page) ──────────────────────────────────────────────────────
+
+export const profileQuery = defineQuery(`
+  *[_type == "profile"][0] {
+    firstName,
+    lastName,
+    pseudo,
+    jobTitle,
+    bio,
+    "stories": stories[] {
+      _key,
+      _type,
+      "imageUrl": image.asset->url + "?w=900&q=85&auto=format",
+      alt,
+      caption,
+      "videoFileUrl": file.asset->url,
+      url,
+      profileUrl,
+      username
+    },
+    "tools": tools[]->{ _id, name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format", url, referral }
+  }
+`);
+
+export type ProfileStory =
+  | {
+      _key: string;
+      _type: "storyPhoto";
+      imageUrl: string | null;
+      alt: string | null;
+      caption: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyVideo";
+      videoFileUrl: string | null;
+      url: string | null;
+      caption: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyAppleMusic";
+      url: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyStrava";
+      profileUrl: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyGithub";
+      username: string | null;
+    };
+
+export type Profile = {
+  firstName: string;
+  lastName: string;
+  pseudo: string | null;
+  jobTitle: string | null;
+  bio: string | null;
+  stories: ProfileStory[] | null;
+  tools: Array<{
+    _id: string;
+    name: string;
+    logoUrl: string | null;
+    url: string | null;
+    referral: boolean | null;
+  }> | null;
+};
+
+export const experiencesQuery = defineQuery(`
+  *[_type == "experience"] | order(orderRank) {
+    _id,
+    title,
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
+    "roles": roles[]->{ _id, name, color, icon },
+    startDate,
+    endDate,
+    description
+  }
+`);
+
+export type ExperienceItem = {
+  _id: string;
+  title: string;
+  organisation: { name: string; logoUrl: string | null } | null;
+  roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+};
+
+export const educationQuery = defineQuery(`
+  *[_type == "education"] | order(orderRank) {
+    _id,
+    title,
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
+    startDate,
+    endDate,
+    description
+  }
+`);
+
+export type EducationItem = {
+  _id: string;
+  title: string;
+  organisation: { name: string; logoUrl: string | null } | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+};
