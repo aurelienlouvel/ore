@@ -15,6 +15,8 @@ import {
   RoleNavIcon,
   ToolNavIcon,
   EducationNavIcon,
+  VolunteerNavIcon,
+  AwardNavIcon,
 } from './schemaTypes/components/navIcons'
 
 export default defineConfig({
@@ -61,6 +63,20 @@ export default defineConfig({
               type: 'education',
               title: 'Education',
               icon: EducationNavIcon,
+              S,
+              context,
+            }),
+            orderableDocumentListDeskItem({
+              type: 'volunteer',
+              title: 'Volunteer',
+              icon: VolunteerNavIcon,
+              S,
+              context,
+            }),
+            orderableDocumentListDeskItem({
+              type: 'award',
+              title: 'Award',
+              icon: AwardNavIcon,
               S,
               context,
             }),

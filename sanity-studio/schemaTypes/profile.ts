@@ -135,6 +135,25 @@ export const profileType = defineType({
         },
         {
           type: 'object',
+          name: 'storyAppleMaps',
+          title: 'Apple Maps',
+          preview: {
+            select: {subtitle: 'address'},
+            prepare({subtitle}: {subtitle?: string}) {
+              return {title: 'Apple Maps', subtitle}
+            },
+          },
+          fields: [
+            defineField({
+              name: 'address',
+              title: 'Address / City',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+          ],
+        },
+        {
+          type: 'object',
           name: 'storyGithub',
           title: 'GitHub',
           preview: {

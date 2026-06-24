@@ -17,6 +17,8 @@ import {artifactType} from './artifact'
 import {contractTypeType} from './contractType'
 import {experienceType} from './experience'
 import {educationType} from './education'
+import {volunteerType} from './volunteer'
+import {awardType} from './award'
 import {projectType} from './project'
 
 export const schemaTypes = [
@@ -38,6 +40,8 @@ export const schemaTypes = [
   contractTypeType,
   experienceType,
   educationType,
+  volunteerType,
+  awardType,
   projectType,
   profileType,
   toolType,
