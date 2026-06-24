@@ -271,8 +271,10 @@ export const profileQuery = defineQuery(`
       "videoFileUrl": file.asset->url,
       url,
       profileUrl,
+      shareHash,
       username,
-      address
+      address,
+      label
     },
     "tools": tools[]->{ _id, name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format", url, referral }
   }
@@ -302,6 +304,7 @@ export type ProfileStory =
       _key: string;
       _type: "storyStrava";
       profileUrl: string | null;
+      shareHash: string | null;
     }
   | {
       _key: string;
@@ -312,6 +315,7 @@ export type ProfileStory =
       _key: string;
       _type: "storyAppleMaps";
       address: string | null;
+      label: string | null;
     };
 
 export type Profile = {

@@ -1,5 +1,5 @@
 import { LogoTile } from "@/components/blocks/LogoTile";
-import { formatMonth } from "@/lib/date-utils";
+import { formatDateRange } from "@/lib/date-utils";
 
 export function TimelineRow({
   orgName,
@@ -32,12 +32,7 @@ export function TimelineRow({
           </span>
           {startDate && (
             <span className="text-base font-medium text-stone-600">
-              {formatMonth(startDate)}
-              {endDate
-                ? ` → ${formatMonth(endDate)}`
-                : ongoingFallback
-                  ? " → now"
-                  : ""}
+              {formatDateRange(startDate, endDate, ongoingFallback)}
             </span>
           )}
         </div>

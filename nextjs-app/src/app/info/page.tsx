@@ -1,4 +1,5 @@
 import { ViewTransition } from "react";
+import { formatMonth } from "@/lib/date-utils";
 import { client } from "@/sanity/client";
 import {
   profileQuery,
@@ -73,22 +74,25 @@ export default async function InfoPage() {
             };
           }
           case "storyStrava": {
-            const activity = await getStravaActivity();
+            const activity = await getStravaActivity(story.shareHash);
             return {
               type: "strava",
               profileUrl: story.profileUrl,
-              activityName: activity?.name ?? null,
-              activityType: activity?.type ?? null,
+              activityName: activity?.activityName ?? null,
+              activityType: activity?.activityType ?? null,
+              speedKmh: activity?.speedKmh ?? null,
               distanceKm: activity?.distanceKm ?? null,
-              movingMin: activity?.movingMin ?? null,
-              date: activity?.date ?? null,
+              durationMin: activity?.durationMin ?? null,
+              bpm: activity?.bpm ?? null,
+              elevationM: activity?.elevationM ?? null,
+              date: activity?.date ? formatMonth(activity.date) : null,
             };
           }
           case "storyAppleMaps": {
             const map = await getMapData(story.address);
             return {
               type: "appleMaps",
-              label: map?.label ?? story.address ?? null,
+              label: story.label ?? map?.label ?? story.address ?? null,
               timezone: map?.timezone ?? null,
               temperature: map?.temperature ?? null,
               weatherCode: map?.weatherCode ?? null,
@@ -132,9 +136,9 @@ export default async function InfoPage() {
             <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr] md:gap-12">
               {/* Left column */}
               <div className="flex flex-col gap-6">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between align-items gap-4 mx-2">
                   <div>
-                    <h1 className="text-2xl! leading-tight! font-bold tracking-tight text-stone-900">
+                    <h1 className="text-lg! leading-tight! font-bold tracking-tight text-stone-900">
                       {profile.firstName} {profile.lastName}
                     </h1>
                     {profile.jobTitle && (
@@ -152,7 +156,7 @@ export default async function InfoPage() {
                 </div>
 
                 {profile.bio && (
-                  <div className="rounded-3xl bg-stone-50 p-8">
+                  <div className="rounded-3xl bg-stone-50 p-6">
                     <p className="text-base leading-relaxed text-stone-600">
                       {profile.bio}
                     </p>
@@ -161,12 +165,12 @@ export default async function InfoPage() {
 
                 {(leftTools.length > 0 || rightTools.length > 0) && (
                   <TooltipProvider>
-                    <div className="flex flex-wrap items-center gap-6">
+                    <div className="flex flex-wrap items-center gap-4 mx-2">
                       {leftTools.map((tool) => (
                         <ToolPill key={tool._id} tool={tool} />
                       ))}
                       {rightTools.length > 0 && (
-                        <div className="ml-auto flex flex-wrap items-center gap-6">
+                        <div className="ml-auto flex flex-wrap items-center gap-4">
                           {rightTools.map((tool) => (
                             <ToolPill key={tool._id} tool={tool} />
                           ))}

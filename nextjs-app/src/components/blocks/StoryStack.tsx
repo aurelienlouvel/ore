@@ -8,7 +8,7 @@ import { SlideContent, type StorySlide } from "./StoryCard";
 
 export type { StorySlide };
 
-const STORY_DURATION = 4; // seconds
+const STORY_DURATION = 12; // seconds
 
 const POS_FRONT = { x: 0,   y: 0,   scale: 1,    rotate: 0,  opacity: 1, zIndex: 20 };
 const POS_BACK  = { x: 30,  y: -12, scale: 0.92, rotate: 3,  opacity: 1, zIndex: 10 };
@@ -26,11 +26,12 @@ function CountdownRing({ active }: { active: boolean }) {
           fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5"
         />
         <motion.circle
+          key={active ? "active" : "inactive"}
           cx="12" cy="12" r={r}
           fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: 0 }}
-          animate={{ strokeDashoffset: active ? circumference : 0 }}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: active ? 0 : circumference }}
           transition={{ duration: active ? STORY_DURATION : 0, ease: "linear" }}
         />
       </svg>

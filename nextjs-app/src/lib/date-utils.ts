@@ -3,6 +3,28 @@ function parseDate(dateStr: string): Date {
   return new Date(parts[0], parts[1] - 1, parts[2] ?? 1);
 }
 
+export function formatDateRange(
+  start: string,
+  end: string | null,
+  ongoingFallback = false,
+): string {
+  const startYear = parseInt(start.split("-")[0]);
+  const endYear = end ? parseInt(end.split("-")[0]) : null;
+  const nowYear = new Date().getFullYear();
+
+  const compareEnd = endYear ?? (ongoingFallback ? nowYear : null);
+
+  if (compareEnd !== null && compareEnd !== startYear) {
+    return `${startYear} – ${end ? endYear : "now"}`;
+  }
+
+  const startLabel = formatMonth(start);
+  if (!end && !ongoingFallback) return startLabel;
+  const endLabel = end ? formatMonth(end) : "now";
+  if (startLabel === endLabel) return startLabel;
+  return `${startLabel} – ${endLabel}`;
+}
+
 export function formatMonth(dateStr: string): string {
   const [yearStr, monthStr] = dateStr.split("-");
   return new Date(Number(yearStr), Number(monthStr) - 1, 1).toLocaleDateString(

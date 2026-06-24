@@ -20,7 +20,9 @@ export function ToolPill({ tool }: { tool: ToolItem }) {
           )
         }
       >
-        <ToolIcon name={tool.name} logoUrl={tool.logoUrl} />
+        <div className="transition-transform duration-150 hover:rotate-2 hover:scale-110">
+          <ToolIcon name={tool.name} logoUrl={tool.logoUrl} />
+        </div>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={10}>
         {tool.name}

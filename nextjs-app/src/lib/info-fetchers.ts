@@ -1,52 +1,135 @@
 import { formatDateTime } from "@/lib/date-utils";
 
-type GitHubPushEvent = {
+type StatsHuntersActivity = {
+  name: string;
+  avg: number;
+  moving_time: number;
+  distance: number;
+  average_heartrate: number;
+  total_elevation_gain: number;
   type: string;
-  created_at: string;
-  repo: { name: string };
-  payload: { commits?: Array<{ message: string }> };
+  date: string;
 };
 
-type GeocodeResult = {
-  results?: Array<{
-    latitude: number;
-    longitude: number;
-    name: string;
+export async function getStravaActivity(shareHash: string | null) {
+  if (!shareHash) return null;
+  try {
+    const sessionRes = await fetch(
+      `https://www.statshunters.com/share/${shareHash}`,
+      { cache: "no-store" },
+    );
+    const setCookies: string[] =
+      (sessionRes.headers as Headers & { getSetCookie?(): string[] }).getSetCookie?.() ?? [];
+    const cookies: Record<string, string> = {};
+    for (const header of setCookies) {
+      const [nameValue] = header.split(";");
+      const eqIdx = nameValue.indexOf("=");
+      if (eqIdx > -1) {
+        cookies[nameValue.slice(0, eqIdx).trim()] = nameValue.slice(eqIdx + 1).trim();
+      }
+    }
+    const xsrfToken = decodeURIComponent(cookies["XSRF-TOKEN"] ?? "");
+    const cookieStr = Object.entries(cookies)
+      .map(([k, v]) => `${k}=${v}`)
+      .join("; ");
+
+    const apiRes = await fetch(
+      `https://www.statshunters.com/share/${shareHash}/api/activities?page=1`,
+      {
+        cache: "no-store",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-XSRF-TOKEN": xsrfToken,
+          Accept: "application/json",
+          Cookie: cookieStr,
+        },
+      },
+    );
+    if (!apiRes.ok) return null;
+    const data = await apiRes.json();
+    const activities: StatsHuntersActivity[] = data.activities ?? [];
+    if (activities.length === 0) return null;
+    const latest = activities[activities.length - 1];
+    return {
+      activityName: latest.name,
+      activityType: latest.type,
+      speedKmh: Math.round(latest.avg * 10) / 10,
+      distanceKm: Math.round(latest.distance / 100) / 10,
+      durationMin: Math.round(latest.moving_time / 60),
+      bpm: latest.average_heartrate > 0 ? Math.round(latest.average_heartrate) : null,
+      elevationM: Math.round(latest.total_elevation_gain),
+      date: latest.date.split(" ")[0],
+    };
+  } catch {
+    return null;
+  }
+}
+
+type GitHubRepo = {
+  name: string;
+  full_name: string;
+  pushed_at: string;
+  fork: boolean;
+};
+
+type GitHubCommit = {
+  commit: {
+    message: string;
+    author: { date: string };
+  };
+};
+
+type NominatimResult = {
+  lat: string;
+  lon: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
     country?: string;
-    timezone?: string;
-  }>;
+  };
 };
 
 type ForecastResult = {
   current?: { temperature_2m?: number; weather_code?: number };
+  timezone?: string;
 };
 
-type StravaActivity = {
-  name?: string;
-  type?: string;
-  sport_type?: string;
-  distance?: number;
-  moving_time?: number;
-  start_date_local?: string;
-};
 
 export async function getLatestCommit(username: string | null) {
   if (!username) return null;
   try {
-    const res = await fetch(
-      `https://api.github.com/users/${username}/events/public`,
-      { next: { revalidate: 60 } },
+    // Find the most recently pushed (non-fork) public repo
+    const reposRes = await fetch(
+      `https://api.github.com/users/${username}/repos?sort=pushed&per_page=10`,
+      {
+        next: { revalidate: 60 },
+        headers: { Accept: "application/vnd.github+json" },
+      },
     );
-    if (!res.ok) return null;
-    const events: GitHubPushEvent[] = await res.json();
-    const pushEvent = events.find((e) => e.type === "PushEvent");
-    const commits = pushEvent?.payload.commits ?? [];
-    const lastCommit = commits[commits.length - 1];
-    if (!pushEvent || !lastCommit) return null;
+    if (!reposRes.ok) return null;
+    const repos: GitHubRepo[] = await reposRes.json();
+    const repo = repos.find((r) => !r.fork) ?? repos[0];
+    if (!repo) return null;
+
+    // Latest commit on that repo's default branch
+    const commitsRes = await fetch(
+      `https://api.github.com/repos/${repo.full_name}/commits?per_page=1`,
+      {
+        next: { revalidate: 60 },
+        headers: { Accept: "application/vnd.github+json" },
+      },
+    );
+    if (!commitsRes.ok) return null;
+    const commits: GitHubCommit[] = await commitsRes.json();
+    const latest = commits[0];
+    if (!latest) return null;
+
     return {
-      repo: pushEvent.repo.name,
-      message: lastCommit.message,
-      date: formatDateTime(pushEvent.created_at),
+      repo: repo.name,
+      message: latest.commit.message.split("\n")[0],
+      date: formatDateTime(latest.commit.author.date),
     };
   } catch {
     return null;
@@ -57,17 +140,30 @@ export async function getMapData(address: string | null) {
   if (!address) return null;
   try {
     const geoRes = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(address)}&count=1&language=en&format=json`,
-      { next: { revalidate: 86400 } },
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1`,
+      {
+        next: { revalidate: 86400 },
+        headers: { "User-Agent": "ore-portfolio/1.0" },
+      },
     );
     if (!geoRes.ok) return null;
-    const geo: GeocodeResult = await geoRes.json();
-    const place = geo.results?.[0];
+    const geo: NominatimResult[] = await geoRes.json();
+    const place = geo?.[0];
     if (!place) return null;
-    const { latitude, longitude, name, country, timezone } = place;
+
+    const latitude = parseFloat(place.lat);
+    const longitude = parseFloat(place.lon);
+    const city =
+      place.address?.city ??
+      place.address?.town ??
+      place.address?.village ??
+      place.address?.municipality ??
+      null;
+    const country = place.address?.country ?? null;
 
     let temperature: number | null = null;
     let weatherCode: number | null = null;
+    let timezone: string | null = null;
     try {
       const wxRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`,
@@ -77,6 +173,7 @@ export async function getMapData(address: string | null) {
         const wx: ForecastResult = await wxRes.json();
         temperature = wx.current?.temperature_2m ?? null;
         weatherCode = wx.current?.weather_code ?? null;
+        timezone = wx.timezone ?? null;
       }
     } catch {
       // weather is best-effort
@@ -85,8 +182,8 @@ export async function getMapData(address: string | null) {
     return {
       lat: latitude,
       lon: longitude,
-      label: country ? `${name}, ${country}` : name,
-      timezone: timezone ?? null,
+      label: city && country ? `${city}, ${country}` : country ?? null,
+      timezone,
       temperature,
       weatherCode,
     };
@@ -136,46 +233,3 @@ export async function getAppleMusicData(url: string | null) {
   }
 }
 
-export async function getStravaActivity() {
-  const clientId = process.env.STRAVA_CLIENT_ID;
-  const clientSecret = process.env.STRAVA_CLIENT_SECRET;
-  const refreshToken = process.env.STRAVA_REFRESH_TOKEN;
-  if (!clientId || !clientSecret || !refreshToken) return null;
-  try {
-    const tokenRes = await fetch("https://www.strava.com/oauth/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-      }),
-      cache: "no-store",
-    });
-    if (!tokenRes.ok) return null;
-    const { access_token: accessToken } = await tokenRes.json();
-    if (!accessToken) return null;
-
-    const actRes = await fetch(
-      "https://www.strava.com/api/v3/athlete/activities?per_page=1",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        next: { revalidate: 1800 },
-      },
-    );
-    if (!actRes.ok) return null;
-    const activities: StravaActivity[] = await actRes.json();
-    const a = activities?.[0];
-    if (!a) return null;
-    return {
-      name: a.name ?? null,
-      type: a.sport_type ?? a.type ?? null,
-      distanceKm: a.distance != null ? a.distance / 1000 : null,
-      movingMin: a.moving_time != null ? Math.round(a.moving_time / 60) : null,
-      date: a.start_date_local ? formatDateTime(a.start_date_local) : null,
-    };
-  } catch {
-    return null;
-  }
-}
