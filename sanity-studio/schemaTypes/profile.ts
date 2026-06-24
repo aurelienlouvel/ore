@@ -98,11 +98,11 @@ export const profileType = defineType({
         {
           type: 'object',
           name: 'storyAppleMusic',
-          title: 'Apple Music',
+          title: 'Music',
           preview: {
             select: {subtitle: 'url'},
             prepare({subtitle}: {subtitle?: string}) {
-              return {title: 'Apple Music', subtitle}
+              return {title: 'Music', subtitle}
             },
           },
           fields: [
@@ -117,18 +117,25 @@ export const profileType = defineType({
         {
           type: 'object',
           name: 'storyStrava',
-          title: 'Strava',
+          title: 'Activity',
           preview: {
             select: {subtitle: 'profileUrl'},
             prepare({subtitle}: {subtitle?: string}) {
-              return {title: 'Strava', subtitle}
+              return {title: 'Activity', subtitle}
             },
           },
           fields: [
             defineField({
               name: 'profileUrl',
-              title: 'Strava profile',
+              title: 'Strava profile URL',
               type: 'url',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'shareHash',
+              title: 'StatsHunters share hash',
+              description: 'The hash from your StatsHunters share URL (e.g. "b97a7df6d0f9" from statshunters.com/share/b97a7df6d0f9)',
+              type: 'string',
               validation: (Rule) => Rule.required(),
             }),
           ],
@@ -136,19 +143,26 @@ export const profileType = defineType({
         {
           type: 'object',
           name: 'storyAppleMaps',
-          title: 'Apple Maps',
+          title: 'Location',
           preview: {
-            select: {subtitle: 'address'},
-            prepare({subtitle}: {subtitle?: string}) {
-              return {title: 'Apple Maps', subtitle}
+            select: {subtitle: 'address', label: 'label'},
+            prepare({subtitle, label}: {subtitle?: string; label?: string}) {
+              return {title: 'Location', subtitle: label ?? subtitle}
             },
           },
           fields: [
             defineField({
               name: 'address',
-              title: 'Address / City',
+              title: 'Address',
+              description: 'Street address or city name (e.g. "9 rue Courat, 75020 Paris")',
               type: 'string',
               validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'label',
+              title: 'Display label (optional)',
+              description: 'Override the label shown on the card (default: "City, Country")',
+              type: 'string',
             }),
           ],
         },
