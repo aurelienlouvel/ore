@@ -7,7 +7,7 @@ export const projectsListQuery = defineQuery(`
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
     "tags": tags[]->{ _id, name, color, icon },
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" }
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" }
   }
 `);
 
@@ -68,7 +68,7 @@ export const projectDetailQuery = defineQuery(`
     title,
     "slug": slug.current,
     "thumbnailRef": thumbnail.asset._ref,
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     startDate,
     endDate,
     "tags": tags[]->{ _id, name, color, icon },
@@ -271,9 +271,10 @@ export const profileQuery = defineQuery(`
       "videoFileUrl": file.asset->url,
       url,
       profileUrl,
-      username
+      username,
+      address
     },
-    "tools": tools[]->{ _id, name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format", url, referral }
+    "tools": tools[]->{ _id, name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format", url, referral }
   }
 `);
 
@@ -306,6 +307,11 @@ export type ProfileStory =
       _key: string;
       _type: "storyGithub";
       username: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyAppleMaps";
+      address: string | null;
     };
 
 export type Profile = {
@@ -328,7 +334,7 @@ export const experiencesQuery = defineQuery(`
   *[_type == "experience"] | order(orderRank) {
     _id,
     title,
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     "roles": roles[]->{ _id, name, color, icon },
     startDate,
     endDate,
@@ -350,7 +356,7 @@ export const educationQuery = defineQuery(`
   *[_type == "education"] | order(orderRank) {
     _id,
     title,
-    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=48&q=80&auto=format" },
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     startDate,
     endDate,
     description
@@ -363,5 +369,43 @@ export type EducationItem = {
   organisation: { name: string; logoUrl: string | null } | null;
   startDate: string | null;
   endDate: string | null;
+  description: string | null;
+};
+
+export const volunteerQuery = defineQuery(`
+  *[_type == "volunteer"] | order(orderRank) {
+    _id,
+    title,
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
+    startDate,
+    endDate,
+    description
+  }
+`);
+
+export type VolunteerItem = {
+  _id: string;
+  title: string;
+  organisation: { name: string; logoUrl: string | null } | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+};
+
+export const awardsQuery = defineQuery(`
+  *[_type == "award"] | order(orderRank) {
+    _id,
+    title,
+    "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
+    date,
+    description
+  }
+`);
+
+export type AwardItem = {
+  _id: string;
+  title: string;
+  organisation: { name: string; logoUrl: string | null } | null;
+  date: string | null;
   description: string | null;
 };

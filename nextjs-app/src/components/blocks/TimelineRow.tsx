@@ -25,7 +25,7 @@ export function TimelineRow({
         logoUrl={logoUrl}
         className="h-10 w-10 rounded-xl text-base"
       />
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
           <span className="text-lg font-bold text-stone-900">
             {orgName ?? title}
@@ -41,9 +41,7 @@ export function TimelineRow({
             </span>
           )}
         </div>
-        {orgName && (
-          <span className="text-base text-stone-500">{title}</span>
-        )}
+        {orgName && <span className="text-base text-stone-500">{title}</span>}
         {description && (
           <p className="mt-1 max-w-lg text-sm leading-relaxed text-stone-400">
             {description}

@@ -17,7 +17,7 @@ export function ToolIcon({
       <img
         src={logoUrl}
         alt={name}
-        className={cn("h-10 w-10 object-contain", className)}
+        className={cn("h-7 w-7 object-contain", className)}
       />
     );
   }
@@ -25,11 +25,11 @@ export function ToolIcon({
   return (
     <div
       className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-stone-200 text-stone-300",
+        "flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-stone-200 text-stone-300",
         className,
       )}
     >
-      <HugeiconsIcon icon={Image02Icon} size={18} strokeWidth={1.5} />
+      <HugeiconsIcon icon={Image02Icon} size={14} strokeWidth={1.5} />
     </div>
   );
 }

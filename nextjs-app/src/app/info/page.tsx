@@ -4,81 +4,37 @@ import {
   profileQuery,
   experiencesQuery,
   educationQuery,
+  volunteerQuery,
+  awardsQuery,
   type Profile,
   type ExperienceItem,
   type EducationItem,
+  type VolunteerItem,
+  type AwardItem,
 } from "@/sanity/queries";
-import { PageShell } from "@/components/PageShell";
-import { ToolIcon } from "@/components/blocks/ToolIcon";
-import { TimelineRow } from "@/components/blocks/TimelineRow";
-import { StoryStack, type StorySlide } from "@/components/blocks/StoryStack";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/Tooltip";
-import { formatDateTime } from "@/lib/date-utils";
+  getAppleMusicData,
+  getLatestCommit,
+  getMapData,
+  getStravaActivity,
+} from "@/lib/info-fetchers";
+import { PageShell } from "@/components/PageShell";
+import { TimelineRow } from "@/components/blocks/TimelineRow";
+import { ToolPill } from "@/components/blocks/ToolPill";
+import { StoryStack, type StorySlide } from "@/components/blocks/StoryStack";
+import { TooltipProvider } from "@/components/ui/Tooltip";
 
 export const revalidate = 60;
 
-type GitHubPushEvent = {
-  type: string;
-  created_at: string;
-  repo: { name: string };
-  payload: { commits?: Array<{ message: string }> };
-};
-
-async function getLatestCommit(username: string | null) {
-  if (!username) return null;
-  try {
-    const res = await fetch(
-      `https://api.github.com/users/${username}/events/public`,
-      { next: { revalidate: 60 } },
-    );
-    if (!res.ok) return null;
-    const events: GitHubPushEvent[] = await res.json();
-    const pushEvent = events.find((e) => e.type === "PushEvent");
-    const commits = pushEvent?.payload.commits ?? [];
-    const lastCommit = commits[commits.length - 1];
-    if (!pushEvent || !lastCommit) return null;
-    return {
-      repo: pushEvent.repo.name,
-      message: lastCommit.message,
-      date: formatDateTime(pushEvent.created_at),
-    };
-  } catch {
-    return null;
-  }
-}
-
-type ToolItem = NonNullable<Profile["tools"]>[number];
-
-function ToolPill({ tool }: { tool: ToolItem }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          tool.url ? (
-            <a href={tool.url} target="_blank" rel="noreferrer" />
-          ) : (
-            <div />
-          )
-        }
-      >
-        <ToolIcon name={tool.name} logoUrl={tool.logoUrl} />
-      </TooltipTrigger>
-      <TooltipContent>{tool.name}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 export default async function InfoPage() {
-  const [profile, experiences, education] = await Promise.all([
-    client.fetch<Profile | null>(profileQuery),
-    client.fetch<ExperienceItem[]>(experiencesQuery),
-    client.fetch<EducationItem[]>(educationQuery),
-  ]);
+  const [profile, experiences, education, volunteering, awards] =
+    await Promise.all([
+      client.fetch<Profile | null>(profileQuery),
+      client.fetch<ExperienceItem[]>(experiencesQuery),
+      client.fetch<EducationItem[]>(educationQuery),
+      client.fetch<VolunteerItem[]>(volunteerQuery),
+      client.fetch<AwardItem[]>(awardsQuery),
+    ]);
 
   if (!profile) {
     return (
@@ -105,10 +61,41 @@ export default async function InfoPage() {
               videoUrl: story.videoFileUrl ?? story.url,
               caption: story.caption,
             };
-          case "storyAppleMusic":
-            return { type: "appleMusic", url: story.url };
-          case "storyStrava":
-            return { type: "strava", profileUrl: story.profileUrl };
+          case "storyAppleMusic": {
+            const music = await getAppleMusicData(story.url);
+            return {
+              type: "appleMusic",
+              url: story.url,
+              artworkUrl: music?.artworkUrl ?? null,
+              trackName: music?.trackName ?? null,
+              artistName: music?.artistName ?? null,
+              previewUrl: music?.previewUrl ?? null,
+            };
+          }
+          case "storyStrava": {
+            const activity = await getStravaActivity();
+            return {
+              type: "strava",
+              profileUrl: story.profileUrl,
+              activityName: activity?.name ?? null,
+              activityType: activity?.type ?? null,
+              distanceKm: activity?.distanceKm ?? null,
+              movingMin: activity?.movingMin ?? null,
+              date: activity?.date ?? null,
+            };
+          }
+          case "storyAppleMaps": {
+            const map = await getMapData(story.address);
+            return {
+              type: "appleMaps",
+              label: map?.label ?? story.address ?? null,
+              timezone: map?.timezone ?? null,
+              temperature: map?.temperature ?? null,
+              weatherCode: map?.weatherCode ?? null,
+              lat: map?.lat ?? null,
+              lon: map?.lon ?? null,
+            };
+          }
           case "storyGithub": {
             const commit = await getLatestCommit(story.username);
             return {
@@ -139,9 +126,10 @@ export default async function InfoPage() {
   return (
     <ViewTransition default="none">
       <PageShell restore="top">
-        <main className="w-full bg-white rounded-t-2xl">
-          <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10 sm:pt-20 sm:pb-64">
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr] md:gap-6">
+        <main className="w-full rounded-t-2xl bg-white">
+          <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10 sm:pb-64 sm:pt-20">
+            {/* Hero: name + bio + tools  ↔  stories */}
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr] md:gap-12">
               {/* Left column */}
               <div className="flex flex-col gap-6">
                 <div className="flex items-start justify-between gap-4">
@@ -156,7 +144,11 @@ export default async function InfoPage() {
                     )}
                   </div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo.png" alt="oré" className="mt-1 h-5 w-auto shrink-0" />
+                  <img
+                    src="/logo.png"
+                    alt="oré"
+                    className="mt-1 h-5 w-auto shrink-0"
+                  />
                 </div>
 
                 {profile.bio && (
@@ -185,13 +177,14 @@ export default async function InfoPage() {
                 )}
               </div>
 
-              {/* Right column */}
+              {/* Right column — story carousel */}
               <StoryStack slides={slides} />
             </div>
 
+            {/* Experience */}
             {experiences.length > 0 && (
               <section className="mt-20">
-                <h2 className="mb-8 text-sm! font-medium! tracking-normal! text-stone-400">Experience</h2>
+                <h4 className="mb-4">Experience</h4>
                 <div className="flex flex-col gap-10">
                   {experiences.map((exp) => (
                     <TimelineRow
@@ -209,9 +202,10 @@ export default async function InfoPage() {
               </section>
             )}
 
+            {/* Education */}
             {education.length > 0 && (
               <section className="mt-20">
-                <h2 className="mb-8 text-sm! font-medium! tracking-normal! text-stone-400">Education</h2>
+                <h4 className="mb-4">Education</h4>
                 <div className="flex flex-col gap-10">
                   {education.map((edu) => (
                     <TimelineRow
@@ -222,6 +216,47 @@ export default async function InfoPage() {
                       startDate={edu.startDate}
                       endDate={edu.endDate}
                       description={edu.description}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Volunteer */}
+            {volunteering.length > 0 && (
+              <section className="mt-20">
+                <h4 className="mb-4">Volunteer</h4>
+                <div className="flex flex-col gap-10">
+                  {volunteering.map((vol) => (
+                    <TimelineRow
+                      key={vol._id}
+                      orgName={vol.organisation?.name ?? null}
+                      logoUrl={vol.organisation?.logoUrl ?? null}
+                      title={vol.title}
+                      startDate={vol.startDate}
+                      endDate={vol.endDate}
+                      description={vol.description}
+                      ongoingFallback
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Awards */}
+            {awards.length > 0 && (
+              <section className="mt-20">
+                <h4 className="mb-4">Awards</h4>
+                <div className="flex flex-col gap-10">
+                  {awards.map((award) => (
+                    <TimelineRow
+                      key={award._id}
+                      orgName={award.title}
+                      logoUrl={award.organisation?.logoUrl ?? null}
+                      title={award.organisation?.name ?? ""}
+                      startDate={award.date}
+                      endDate={null}
+                      description={award.description}
                     />
                   ))}
                 </div>

@@ -265,6 +265,14 @@ h3 {
     color: var(--color-stone-800);
 }
 
+h4 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    --font-wght: 600;
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-stone-600);
+}
+
 .text-block {
     font-size: var(--text-2xl);
     line-height: var(--text-2xl--line-height);
