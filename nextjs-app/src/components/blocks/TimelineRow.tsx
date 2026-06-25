@@ -26,12 +26,12 @@ export function TimelineRow({
         className="h-10 w-10 rounded-xl text-base"
       />
       <div className="flex flex-1 flex-col">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <span className="text-lg font-bold text-stone-900">
+        <div className="flex flex-wrap items-start justify-between gap-x-4">
+          <span className="min-w-0 text-lg font-bold text-stone-900">
             {orgName ?? title}
           </span>
           {startDate && (
-            <span className="text-base font-medium text-stone-600">
+            <span className="hidden shrink-0 whitespace-nowrap text-sm font-medium text-stone-600 sm:inline">
               {formatDateRange(startDate, endDate, ongoingFallback)}
             </span>
           )}
@@ -42,6 +42,11 @@ export function TimelineRow({
             {contractType && (
               <span className="text-stone-400"> · {contractType}</span>
             )}
+          </span>
+        )}
+        {startDate && (
+          <span className="mt-0.5 text-sm font-medium text-stone-500 sm:hidden">
+            {formatDateRange(startDate, endDate, ongoingFallback)}
           </span>
         )}
       </div>

@@ -8,16 +8,6 @@ export function formatDateRange(
   end: string | null,
   ongoingFallback = false,
 ): string {
-  const startYear = parseInt(start.split("-")[0]);
-  const endYear = end ? parseInt(end.split("-")[0]) : null;
-  const nowYear = new Date().getFullYear();
-
-  const compareEnd = endYear ?? (ongoingFallback ? nowYear : null);
-
-  if (compareEnd !== null && compareEnd !== startYear) {
-    return `${startYear} – ${end ? endYear : "now"}`;
-  }
-
   const startLabel = formatMonth(start);
   if (!end && !ongoingFallback) return startLabel;
   const endLabel = end ? formatMonth(end) : "now";

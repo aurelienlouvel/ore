@@ -305,7 +305,7 @@ function MusicCard({
   useEffect(() => {
     if (!slide.previewUrl) return;
     const audio = new Audio(slide.previewUrl);
-    audio.volume = 0.6;
+    audio.volume = 0.35;
     audioRef.current = audio;
     const onTimeUpdate = () => {
       setAudioProgress(Math.min(audio.currentTime / 15, 1));

@@ -147,6 +147,7 @@ export function ActionBar() {
                 })}
               </nav>
 
+              <div className="hidden sm:flex items-center">
               {sep}
 
               <div className="relative">
@@ -193,6 +194,7 @@ export function ActionBar() {
                   />
                   let&apos;s chat
                 </motion.button>
+              </div>
               </div>
             </div>
           ) : (
