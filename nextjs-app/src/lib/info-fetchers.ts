@@ -142,25 +142,6 @@ export async function getLatestCommit(username: string | null) {
   }
 }
 
-// Story card viewport (px), aspect-[6/7] — used to frame the city
-const MAP_CARD_W = 256;
-const MAP_CARD_H = 299;
-
-// Smallest integer zoom that fits a lat/lon bounding box inside the card
-function fitZoom(south: number, north: number, west: number, east: number) {
-  const padW = MAP_CARD_W * 0.9;
-  const padH = MAP_CARD_H * 0.9;
-  const merc = (deg: number) => {
-    const r = (deg * Math.PI) / 180;
-    return Math.log(Math.tan(r) + 1 / Math.cos(r));
-  };
-  const lonSpan = Math.max(Math.abs(east - west), 0.004);
-  const latSpan = Math.max(Math.abs(merc(north) - merc(south)), 0.0004);
-  const zoomLon = Math.log2((padW * 360) / (256 * lonSpan));
-  const zoomLat = Math.log2((padH * 2 * Math.PI) / (256 * latSpan));
-  return Math.max(10, Math.min(15, Math.min(zoomLon, zoomLat)));
-}
-
 export async function getMapData(address: string | null) {
   if (!address) return null;
   try {
@@ -186,10 +167,10 @@ export async function getMapData(address: string | null) {
       null;
     const country = place.address?.country ?? null;
 
-    // Street-level view centred on the address.
+    // Map now uses a static image — keep these for backwards compat with the type.
     const centerLat = latitude;
     const centerLon = longitude;
-    const zoom = 16;
+    const zoom = 11;
 
     let temperature: number | null = null;
     let weatherCode: number | null = null;

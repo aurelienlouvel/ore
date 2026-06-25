@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
 } from "react";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Bicycle01Icon,
@@ -103,19 +102,10 @@ const GH_LEVELS = [
 // ─── Map tile helpers ──────────────────────────────────────────────────────────
 
 const MAP_TILE = 256;
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-// GL JS (required for the 3D "Standard" style) only accepts PUBLIC tokens (pk.*).
-// Secret tokens (sk.*) are rejected by GL JS, but still work with the raster
-// Static Images API — so we pick the renderer based on the token type.
-const MAPBOX_IS_PUBLIC_TOKEN = MAPBOX_TOKEN.startsWith("pk.");
-// GL vector style (Standard = 3D). Override with a `mapbox://styles/...` URL.
-const MAPBOX_GL_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE?.startsWith(
-  "mapbox://styles/",
-)
-  ? process.env.NEXT_PUBLIC_MAPBOX_STYLE
-  : "mapbox://styles/mapbox/standard";
-// Raster fallback for sk.* tokens (Standard is unavailable on the Static API).
-const MAPBOX_STATIC_STYLE = "mapbox/light-v11";
+// Static Paris map — matches the apple-maps screenshot in /public/paris-map.jpg
+const PARIS_MAP_LAT = 48.857;
+const PARIS_MAP_LON = 2.347;
+const PARIS_MAP_ZOOM = 11;
 
 function tileFloat(lat: number, lon: number, z: number) {
   const n = 2 ** z;
@@ -234,16 +224,13 @@ function LocationCard({
     return <PlaceholderSlide icon={MapPinpoint01Icon} label="carte à venir" />;
   }
 
-  // Frame the map on the whole city; pin the marker on the exact address
-  const zoom = slide.zoom ?? 12;
-  const centerLat = slide.centerLat ?? slide.lat;
-  const centerLon = slide.centerLon ?? slide.lon;
+  // Pin offset relative to the static Paris map image
   const marker = projectOffset(
-    centerLat,
-    centerLon,
+    PARIS_MAP_LAT,
+    PARIS_MAP_LON,
     slide.lat,
     slide.lon,
-    zoom,
+    PARIS_MAP_ZOOM,
   );
 
   const timeStr = new Intl.DateTimeFormat("fr-FR", {
@@ -254,18 +241,19 @@ function LocationCard({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#e8e8e8]">
-      {/* Map framed on the whole city */}
-      <MapboxBackground lat={centerLat} lon={centerLon} zoom={zoom} />
+      {/* Static Paris map */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/paris-map.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
 
       <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/25 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/60 to-transparent" />
 
-      {/* Location dot — pinned on the address (off-centre when needed) */}
+      {/* Location dot — pinned on address, clamped 24px from each edge */}
       <span
         className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
         style={{
-          left: `calc(50% + ${marker.dx}px)`,
-          top: `calc(50% + ${marker.dy}px)`,
+          left: `clamp(24px, calc(50% + ${marker.dx}px), calc(100% - 24px))`,
+          top: `clamp(24px, calc(50% + ${marker.dy}px), calc(100% - 24px))`,
         }}
       >
         <span className="absolute h-10 w-10 animate-slow-ping rounded-full bg-[#007AFF]/25" />
@@ -304,61 +292,6 @@ function LocationCard({
         )}
       </div>
     </div>
-  );
-}
-
-type MapProps = { lat: number; lon: number; zoom: number };
-
-function MapboxBackground(props: MapProps) {
-  // Standard (3D) needs GL JS + a public token; otherwise fall back to a raster
-  // image so the card still shows a map with a secret token.
-  return MAPBOX_IS_PUBLIC_TOKEN ? (
-    <MapboxGLBackground {...props} />
-  ) : (
-    <MapboxStaticBackground {...props} />
-  );
-}
-
-function MapboxGLBackground({ lat, lon, zoom }: MapProps) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!ref.current || !MAPBOX_TOKEN) return;
-
-    let map: import("mapbox-gl").Map | null = null;
-    let cancelled = false;
-
-    import("mapbox-gl").then(({ default: mapboxgl }) => {
-      if (cancelled || !ref.current) return;
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      map = new mapboxgl.Map({
-        container: ref.current,
-        style: MAPBOX_GL_STYLE,
-        center: [lon, lat],
-        zoom,
-        interactive: false,
-        attributionControl: false,
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      map?.remove();
-    };
-  }, [lat, lon, zoom]);
-
-  return <div ref={ref} className="absolute inset-0 h-full w-full" />;
-}
-
-function MapboxStaticBackground({ lat, lon, zoom }: MapProps) {
-  const url = `https://api.mapbox.com/styles/v1/${MAPBOX_STATIC_STYLE}/static/${lon},${lat},${zoom},0/600x700@2x?access_token=${MAPBOX_TOKEN}`;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt=""
-      className="absolute inset-0 h-full w-full object-cover"
-    />
   );
 }
 
