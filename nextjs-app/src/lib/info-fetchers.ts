@@ -189,7 +189,7 @@ export async function getMapData(address: string | null) {
     // Street-level view centred on the address.
     const centerLat = latitude;
     const centerLon = longitude;
-    const zoom = 14;
+    const zoom = 16;
 
     let temperature: number | null = null;
     let weatherCode: number | null = null;

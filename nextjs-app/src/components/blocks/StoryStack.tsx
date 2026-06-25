@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { EASE_IN_OUT } from "@/lib/easings";
-import { cn } from "@/lib/utils";
 import { SlideContent, type StorySlide } from "./StoryCard";
 
 export type { StorySlide };
