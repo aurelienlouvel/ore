@@ -58,11 +58,5 @@ export const educationType = defineType({
       type: 'date',
       options: {dateFormat: 'YYYY-MM-DD'},
     }),
-    defineField({
-      name: 'description',
-      title: 'Description',
-      type: 'text',
-      rows: 4,
-    }),
   ],
 })

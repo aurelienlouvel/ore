@@ -270,11 +270,12 @@ export const profileQuery = defineQuery(`
       caption,
       "videoFileUrl": file.asset->url,
       url,
-      profileUrl,
-      shareHash,
+      shareUrl,
       username,
       address,
-      label
+      label,
+      trackerUrl,
+      region
     },
     "tools": tools[]->{ _id, name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format", url, referral }
   }
@@ -303,8 +304,7 @@ export type ProfileStory =
   | {
       _key: string;
       _type: "storyStrava";
-      profileUrl: string | null;
-      shareHash: string | null;
+      shareUrl: string | null;
     }
   | {
       _key: string;
@@ -316,6 +316,12 @@ export type ProfileStory =
       _type: "storyAppleMaps";
       address: string | null;
       label: string | null;
+    }
+  | {
+      _key: string;
+      _type: "storyValorant";
+      trackerUrl: string | null;
+      region: string | null;
     };
 
 export type Profile = {
@@ -338,22 +344,22 @@ export const experiencesQuery = defineQuery(`
   *[_type == "experience"] | order(orderRank) {
     _id,
     title,
+    "contractType": contractType->{ name },
     "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     "roles": roles[]->{ _id, name, color, icon },
     startDate,
-    endDate,
-    description
+    endDate
   }
 `);
 
 export type ExperienceItem = {
   _id: string;
   title: string;
+  contractType: { name: string } | null;
   organisation: { name: string; logoUrl: string | null } | null;
   roles: Array<{ _id: string; name: string; color: string | null; icon: string | null }> | null;
   startDate: string | null;
   endDate: string | null;
-  description: string | null;
 };
 
 export const educationQuery = defineQuery(`
@@ -362,8 +368,7 @@ export const educationQuery = defineQuery(`
     title,
     "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     startDate,
-    endDate,
-    description
+    endDate
   }
 `);
 
@@ -373,7 +378,6 @@ export type EducationItem = {
   organisation: { name: string; logoUrl: string | null } | null;
   startDate: string | null;
   endDate: string | null;
-  description: string | null;
 };
 
 export const volunteerQuery = defineQuery(`
@@ -382,8 +386,7 @@ export const volunteerQuery = defineQuery(`
     title,
     "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
     startDate,
-    endDate,
-    description
+    endDate
   }
 `);
 
@@ -393,7 +396,6 @@ export type VolunteerItem = {
   organisation: { name: string; logoUrl: string | null } | null;
   startDate: string | null;
   endDate: string | null;
-  description: string | null;
 };
 
 export const awardsQuery = defineQuery(`
@@ -401,8 +403,7 @@ export const awardsQuery = defineQuery(`
     _id,
     title,
     "organisation": organisation->{ name, "logoUrl": logo.asset->url + "?w=96&q=90&auto=format" },
-    date,
-    description
+    date
   }
 `);
 
@@ -411,5 +412,4 @@ export type AwardItem = {
   title: string;
   organisation: { name: string; logoUrl: string | null } | null;
   date: string | null;
-  description: string | null;
 };

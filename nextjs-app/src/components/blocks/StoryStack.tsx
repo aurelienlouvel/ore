@@ -9,30 +9,60 @@ import { SlideContent, type StorySlide } from "./StoryCard";
 export type { StorySlide };
 
 const STORY_DURATION = 12; // seconds
+const TICK_MS = 100;
 
-const POS_FRONT = { x: 0,   y: 0,   scale: 1,    rotate: 0,  opacity: 1, zIndex: 20 };
-const POS_BACK  = { x: 30,  y: -12, scale: 0.92, rotate: 3,  opacity: 1, zIndex: 10 };
-const POS_EXIT  = { x: -20, y: 4,   scale: 0.88, rotate: 0,  opacity: 0, zIndex: 5  };
-const POS_ENTER = { x: 56,  y: -12, scale: 0.85, rotate: 4,  opacity: 0, zIndex: 10 };
+const POS_FRONT = { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1, zIndex: 20 };
+const POS_BACK = {
+  x: 30,
+  y: -12,
+  scale: 0.92,
+  rotate: 3,
+  opacity: 1,
+  zIndex: 10,
+};
+const POS_EXIT = {
+  x: -20,
+  y: 4,
+  scale: 0.88,
+  rotate: 0,
+  opacity: 0,
+  zIndex: 5,
+};
+const POS_ENTER = {
+  x: 56,
+  y: -12,
+  scale: 0.85,
+  rotate: 4,
+  opacity: 0,
+  zIndex: 10,
+};
 
-function CountdownRing({ active }: { active: boolean }) {
-  const r = 9;
+function CountdownRing({ progress }: { progress: number }) {
+  const r = 6;
   const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - Math.min(progress, 1));
   return (
     <div className="pointer-events-none absolute right-4 top-4 z-30 drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]">
-      <svg width="22" height="22" viewBox="0 0 24 24" className="-rotate-90">
+      <svg width="16" height="16" viewBox="0 0 16 16" className="-rotate-90">
         <circle
-          cx="12" cy="12" r={r}
-          fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5"
+          cx="8"
+          cy="8"
+          r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.4)"
+          strokeWidth="2"
         />
-        <motion.circle
-          key={active ? "active" : "inactive"}
-          cx="12" cy="12" r={r}
-          fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"
+        <circle
+          cx="8"
+          cy="8"
+          r={r}
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: active ? 0 : circumference }}
-          transition={{ duration: active ? STORY_DURATION : 0, ease: "linear" }}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 0.12s linear" }}
         />
       </svg>
     </div>
@@ -41,17 +71,41 @@ function CountdownRing({ active }: { active: boolean }) {
 
 export function StoryStack({ slides }: { slides: StorySlide[] }) {
   const [step, setStep] = useState(0);
+  const [musicPaused, setMusicPaused] = useState(false);
+  const [elapsed, setElapsed] = useState(0); // ms
   const total = slides.length;
   const hasMultiple = total > 1;
-  const advance = useCallback(() => setStep((s) => s + 1), []);
 
+  const advance = useCallback(() => {
+    setStep((s) => s + 1);
+    setMusicPaused(false);
+    setElapsed(0);
+  }, []);
+
+  // Reset elapsed when step changes
   useEffect(() => {
-    if (!hasMultiple) return;
-    const timer = setTimeout(advance, STORY_DURATION * 1000);
-    return () => clearTimeout(timer);
-  }, [step, hasMultiple, advance]);
+    setElapsed(0);
+  }, [step]);
+
+  // Tick every 100ms when running
+  useEffect(() => {
+    if (!hasMultiple || musicPaused) return;
+    const id = setInterval(() => {
+      setElapsed((e) => e + TICK_MS);
+    }, TICK_MS);
+    return () => clearInterval(id);
+  }, [step, hasMultiple, musicPaused]);
+
+  // Advance when elapsed reaches duration
+  useEffect(() => {
+    if (hasMultiple && elapsed >= STORY_DURATION * 1000) {
+      advance();
+    }
+  }, [elapsed, hasMultiple, advance]);
 
   if (total === 0) return null;
+
+  const progress = elapsed / (STORY_DURATION * 1000);
 
   if (!hasMultiple) {
     return (
@@ -63,44 +117,48 @@ export function StoryStack({ slides }: { slides: StorySlide[] }) {
     );
   }
 
-  const visible = [step + 1, step];
-
+  // Back card is a stable non-AnimatePresence element — its key never changes,
+  // so it never remounts. Content changes in-place when step advances.
+  // Front card uses AnimatePresence: enters from POS_BACK, exits to POS_EXIT.
   return (
     <div className="relative aspect-[6/7] w-full">
+      {/* Back — always present, never exits */}
+      <motion.div
+        initial={false}
+        animate={POS_BACK}
+        transition={{ duration: 0.55, ease: EASE_IN_OUT }}
+        className="absolute inset-0 overflow-hidden rounded-3xl shadow-md"
+        style={{ zIndex: 10 }}
+      >
+        <SlideContent slide={slides[(step + 1) % total]} />
+      </motion.div>
+
+      {/* Front — enters from POS_BACK, exits to POS_EXIT */}
       <AnimatePresence initial={false}>
-        {visible.map((s) => {
-          const isFront = s === step;
-          return (
-            <motion.div
-              key={s}
-              role={isFront ? "button" : undefined}
-              tabIndex={isFront ? 0 : -1}
-              aria-label={isFront ? "Next story" : undefined}
-              onClick={isFront ? advance : undefined}
-              onKeyDown={
-                isFront
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        advance();
-                      }
-                    }
-                  : undefined
-              }
-              initial={isFront ? false : POS_ENTER}
-              animate={isFront ? POS_FRONT : POS_BACK}
-              exit={POS_EXIT}
-              transition={{ duration: 0.55, ease: EASE_IN_OUT }}
-              className={cn(
-                "absolute inset-0 overflow-hidden rounded-3xl shadow-md outline-none",
-                isFront && "cursor-pointer",
-              )}
-            >
-              <SlideContent slide={slides[s % total]} />
-              <CountdownRing active={isFront} />
-            </motion.div>
-          );
-        })}
+        <motion.div
+          key={step}
+          role="button"
+          tabIndex={0}
+          aria-label="Next story"
+          onClick={advance}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              advance();
+            }
+          }}
+          initial={{ ...POS_BACK, zIndex: 10 }}
+          animate={{ ...POS_FRONT, zIndex: 20 }}
+          exit={{ ...POS_EXIT, zIndex: 5 }}
+          transition={{ duration: 0.55, ease: EASE_IN_OUT }}
+          className="absolute inset-0 cursor-pointer overflow-hidden rounded-3xl shadow-md outline-none"
+        >
+          <SlideContent
+            slide={slides[step % total]}
+            onMusicPlaying={setMusicPaused}
+          />
+          <CountdownRing progress={progress} />
+        </motion.div>
       </AnimatePresence>
     </div>
   );

@@ -119,23 +119,17 @@ export const profileType = defineType({
           name: 'storyStrava',
           title: 'Activity',
           preview: {
-            select: {subtitle: 'profileUrl'},
+            select: {subtitle: 'shareUrl'},
             prepare({subtitle}: {subtitle?: string}) {
               return {title: 'Activity', subtitle}
             },
           },
           fields: [
             defineField({
-              name: 'profileUrl',
-              title: 'Strava profile URL',
+              name: 'shareUrl',
+              title: 'StatsHunters share link',
+              description: 'Paste your full StatsHunters share URL (e.g. https://www.statshunters.com/share/b97a7df6d0f9)',
               type: 'url',
-              validation: (Rule) => Rule.required(),
-            }),
-            defineField({
-              name: 'shareHash',
-              title: 'StatsHunters share hash',
-              description: 'The hash from your StatsHunters share URL (e.g. "b97a7df6d0f9" from statshunters.com/share/b97a7df6d0f9)',
-              type: 'string',
               validation: (Rule) => Rule.required(),
             }),
           ],
@@ -182,6 +176,41 @@ export const profileType = defineType({
               title: 'GitHub username',
               type: 'string',
               validation: (Rule) => Rule.required(),
+            }),
+          ],
+        },
+        {
+          type: 'object',
+          name: 'storyValorant',
+          title: 'Valorant',
+          preview: {
+            select: {subtitle: 'trackerUrl'},
+            prepare({subtitle}: {subtitle?: string}) {
+              return {title: 'Valorant', subtitle}
+            },
+          },
+          fields: [
+            defineField({
+              name: 'trackerUrl',
+              title: 'Tracker.gg profile URL',
+              description: 'e.g. https://tracker.gg/valorant/profile/riot/oré%23369/overview',
+              type: 'url',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'region',
+              title: 'Region',
+              type: 'string',
+              options: {
+                list: [
+                  {title: 'Europe', value: 'eu'},
+                  {title: 'North America', value: 'na'},
+                  {title: 'Asia Pacific', value: 'ap'},
+                  {title: 'Korea', value: 'kr'},
+                ],
+                layout: 'radio',
+              },
+              initialValue: 'eu',
             }),
           ],
         },

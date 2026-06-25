@@ -1,24 +1,50 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Cardiogram01Icon,
+  Bicycle01Icon,
+  CloudAngledRainZapIcon,
+  CloudBigRainIcon,
+  CloudIcon,
+  CloudLittleRainIcon,
+  FavouriteIcon,
   GithubIcon,
   GitCommitIcon,
+  GameController03Icon,
   Image02Icon,
   MapPinpoint01Icon,
   MusicNote01Icon,
+  RainIcon,
+  Route01Icon,
+  SnowIcon,
+  StopWatchIcon,
+  Sun01Icon,
+  SunCloud01Icon,
+  SwimmingIcon,
   Video01Icon,
+  WalkingIcon,
   WorkoutRunIcon,
+  ZapIcon,
 } from "@hugeicons/core-free-icons";
 
 export type StorySlide =
-  | { type: "photo"; imageUrl: string | null; alt: string | null; caption: string | null }
+  | {
+      type: "photo";
+      imageUrl: string | null;
+      alt: string | null;
+      caption: string | null;
+    }
   | { type: "video"; videoUrl: string | null; caption: string | null }
   | {
-      type: "appleMusic";
+      type: "music";
       url: string | null;
       artworkUrl: string | null;
       trackName: string | null;
@@ -27,7 +53,6 @@ export type StorySlide =
     }
   | {
       type: "strava";
-      profileUrl: string | null;
       activityName: string | null;
       activityType: string | null;
       speedKmh: number | null;
@@ -42,31 +67,76 @@ export type StorySlide =
       repo: string | null;
       message: string | null;
       date: string | null;
+      contributions: Array<{ level: number }> | null;
+      totalContributions: number | null;
       url: string | null;
     }
   | {
-      type: "appleMaps";
+      type: "location";
       label: string | null;
       timezone: string | null;
       temperature: number | null;
       weatherCode: number | null;
+      // Marker — exact address
       lat: number | null;
       lon: number | null;
+      // Map frame — whole city
+      centerLat: number | null;
+      centerLon: number | null;
+      zoom: number | null;
+    }
+  | {
+      type: "valorant";
+      trackerUrl: string | null;
+      region: string | null;
     };
+
+// GitHub contribution levels (dark theme greens)
+const GH_LEVELS = [
+  "rgba(255,255,255,0.06)",
+  "#0e4429",
+  "#006d32",
+  "#26a641",
+  "#39d353",
+];
 
 // ─── Map tile helpers ──────────────────────────────────────────────────────────
 
 const MAP_TILE = 256;
-const MAP_GRID = 3;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+// GL JS (required for the 3D "Standard" style) only accepts PUBLIC tokens (pk.*).
+// Secret tokens (sk.*) are rejected by GL JS, but still work with the raster
+// Static Images API — so we pick the renderer based on the token type.
+const MAPBOX_IS_PUBLIC_TOKEN = MAPBOX_TOKEN.startsWith("pk.");
+// GL vector style (Standard = 3D). Override with a `mapbox://styles/...` URL.
+const MAPBOX_GL_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE?.startsWith(
+  "mapbox://styles/",
+)
+  ? process.env.NEXT_PUBLIC_MAPBOX_STYLE
+  : "mapbox://styles/mapbox/standard";
+// Raster fallback for sk.* tokens (Standard is unavailable on the Static API).
+const MAPBOX_STATIC_STYLE = "mapbox/light-v11";
 
 function tileFloat(lat: number, lon: number, z: number) {
   const n = 2 ** z;
   const x = ((lon + 180) / 360) * n;
   const latRad = (lat * Math.PI) / 180;
   const y =
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-    n;
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
   return { x, y };
+}
+
+// Pixel offset of a point relative to the map centre at a given zoom
+function projectOffset(
+  centerLat: number,
+  centerLon: number,
+  lat: number,
+  lon: number,
+  z: number,
+) {
+  const c = tileFloat(centerLat, centerLon, z);
+  const p = tileFloat(lat, lon, z);
+  return { dx: (p.x - c.x) * MAP_TILE, dy: (p.y - c.y) * MAP_TILE };
 }
 
 function formatPace(speedKmh: number): string {
@@ -76,18 +146,35 @@ function formatPace(speedKmh: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function weatherEmoji(code: number | null): string {
-  if (code == null) return "";
-  if (code === 0) return "☀️";
-  if (code <= 2) return "🌤️";
-  if (code === 3) return "☁️";
-  if (code <= 48) return "🌫️";
-  if (code <= 57) return "🌦️";
-  if (code <= 67) return "🌧️";
-  if (code <= 77) return "🌨️";
-  if (code <= 82) return "🌧️";
-  if (code <= 86) return "🌨️";
-  return "⛈️";
+function formatDuration(min: number | null): string {
+  if (min == null) return "—";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+function getActivityIcon(type: string | null) {
+  const t = type?.toLowerCase() ?? "";
+  if (t === "ride" || t === "virtualride" || t === "ebikeride")
+    return Bicycle01Icon;
+  if (t === "swim") return SwimmingIcon;
+  if (t === "walk" || t === "hike") return WalkingIcon;
+  return WorkoutRunIcon;
+}
+
+function getWeatherIcon(
+  code: number | null,
+): Parameters<typeof HugeiconsIcon>[0]["icon"] {
+  if (code == null || code === 0) return Sun01Icon;
+  if (code <= 2) return SunCloud01Icon;
+  if (code <= 48) return CloudIcon;
+  if (code <= 57) return CloudLittleRainIcon;
+  if (code <= 67) return RainIcon;
+  if (code <= 77) return SnowIcon;
+  if (code <= 82) return CloudBigRainIcon;
+  if (code <= 86) return SnowIcon;
+  return CloudAngledRainZapIcon;
 }
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
@@ -101,7 +188,12 @@ function PlaceholderSlide({
 }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-stone-50">
-      <HugeiconsIcon icon={icon} size={28} strokeWidth={1.5} className="text-stone-300" />
+      <HugeiconsIcon
+        icon={icon}
+        size={28}
+        strokeWidth={1.5}
+        className="text-stone-300"
+      />
       <span className="text-xs font-medium text-stone-400">{label}</span>
     </div>
   );
@@ -124,15 +216,14 @@ function CardShell({
   );
 }
 
-// ─── Apple Maps card ───────────────────────────────────────────────────────────
+// ───  Maps card ───────────────────────────────────────────────────────────
 
-function AppleMapsCard({
+function LocationCard({
   slide,
 }: {
-  slide: Extract<StorySlide, { type: "appleMaps" }>;
+  slide: Extract<StorySlide, { type: "location" }>;
 }) {
   const [now, setNow] = useState(() => new Date());
-  const zoom = 11;
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -143,6 +234,18 @@ function AppleMapsCard({
     return <PlaceholderSlide icon={MapPinpoint01Icon} label="carte à venir" />;
   }
 
+  // Frame the map on the whole city; pin the marker on the exact address
+  const zoom = slide.zoom ?? 12;
+  const centerLat = slide.centerLat ?? slide.lat;
+  const centerLon = slide.centerLon ?? slide.lon;
+  const marker = projectOffset(
+    centerLat,
+    centerLon,
+    slide.lat,
+    slide.lon,
+    zoom,
+  );
+
   const timeStr = new Intl.DateTimeFormat("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -150,99 +253,126 @@ function AppleMapsCard({
   }).format(now);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#e9eaf0]">
-      <CartoBackground lat={slide.lat} lon={slide.lon} zoom={zoom} />
+    <div className="relative h-full w-full overflow-hidden bg-[#e8e8e8]">
+      {/* Map framed on the whole city */}
+      <MapboxBackground lat={centerLat} lon={centerLon} zoom={zoom} />
 
-      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/25 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/25 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/60 to-transparent" />
 
-      {/* Location dot — centered on the geocoded address */}
-      <span className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-        <span className="absolute h-9 w-9 animate-ping rounded-full bg-[#007AFF]/20" />
-        <span className="relative block h-3.5 w-3.5 rounded-full bg-[#007AFF] shadow-md ring-[3px] ring-white" />
+      {/* Location dot — pinned on the address (off-centre when needed) */}
+      <span
+        className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+        style={{
+          left: `calc(50% + ${marker.dx}px)`,
+          top: `calc(50% + ${marker.dy}px)`,
+        }}
+      >
+        <span className="absolute h-10 w-10 animate-slow-ping rounded-full bg-[#007AFF]/25" />
+        <span className="relative block h-4 w-4 rounded-full bg-[#007AFF] shadow-lg ring-[3px] ring-white" />
       </span>
 
       {/* Top bar */}
       <div className="absolute inset-x-0 top-0 flex items-center gap-1.5 p-4 text-white drop-shadow">
         <HugeiconsIcon icon={MapPinpoint01Icon} size={15} strokeWidth={2} />
-        <span className="text-xs font-medium uppercase tracking-wide text-white/80">Location</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+          Location
+        </span>
       </div>
 
-      {/* Bottom-right: weather + city */}
-      <div className="absolute bottom-0 right-0 p-4 pb-5 text-right">
-        {slide.temperature != null && (
-          <p className="mb-1 text-xs font-medium text-white/80 drop-shadow-sm" suppressHydrationWarning>
-            {weatherEmoji(slide.weatherCode)} {Math.round(slide.temperature)}°
-            <span className="mx-1.5 text-white/40">·</span>
-            {timeStr}
+      {/* Bottom info */}
+      <div className="absolute bottom-0 left-0 p-4 pb-5">
+        <div
+          className="flex items-center gap-1 text-white/75 drop-shadow"
+          suppressHydrationWarning
+        >
+          <HugeiconsIcon
+            icon={getWeatherIcon(slide.weatherCode)}
+            size={12}
+            strokeWidth={2}
+          />
+          {slide.temperature != null && (
+            <span className="text-xs">{Math.round(slide.temperature)}°</span>
+          )}
+          <span className="px-0.5 text-white/40">·</span>
+          <span className="text-xs">{timeStr}</span>
+        </div>
+        {slide.label && (
+          <p className="mt-0.5 text-lg font-semibold leading-tight text-white drop-shadow">
+            {slide.label}
           </p>
         )}
-        {slide.label && (
-          <p className="text-2xl font-bold text-white drop-shadow">{slide.label}</p>
-        )}
       </div>
     </div>
   );
 }
 
-// CartoDB Voyager — colorful raster tiles, free, no token
-function CartoBackground({
-  lat,
-  lon,
-  zoom,
-}: {
-  lat: number;
-  lon: number;
-  zoom: number;
-}) {
-  const { x, y } = tileFloat(lat, lon, zoom);
-  const tileX = Math.floor(x);
-  const tileY = Math.floor(y);
-  const half = (MAP_GRID - 1) / 2;
-  const locPxX = half * MAP_TILE + (x - tileX) * MAP_TILE;
-  const locPxY = half * MAP_TILE + (y - tileY) * MAP_TILE;
-  const layerSize = MAP_GRID * MAP_TILE;
-  return (
-    <div
-      className="absolute"
-      style={{
-        width: layerSize,
-        height: layerSize,
-        left: `calc(50% - ${locPxX}px)`,
-        top: `calc(50% - ${locPxY}px)`,
-      }}
-    >
-      {Array.from({ length: MAP_GRID }).flatMap((_, row) =>
-        Array.from({ length: MAP_GRID }).map((__, col) => {
-          const tx = tileX - half + col;
-          const ty = tileY - half + row;
-          const s = ["a", "b", "c", "d"][(tx + ty) % 4];
-          return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={`${tx}-${ty}-${zoom}`}
-              src={`https://${s}.basemaps.cartocdn.com/rastertiles/voyager/${zoom}/${tx}/${ty}@2x.png`}
-              alt=""
-              width={MAP_TILE}
-              height={MAP_TILE}
-              className="absolute max-w-none"
-              style={{ left: col * MAP_TILE, top: row * MAP_TILE }}
-            />
-          );
-        }),
-      )}
-    </div>
+type MapProps = { lat: number; lon: number; zoom: number };
+
+function MapboxBackground(props: MapProps) {
+  // Standard (3D) needs GL JS + a public token; otherwise fall back to a raster
+  // image so the card still shows a map with a secret token.
+  return MAPBOX_IS_PUBLIC_TOKEN ? (
+    <MapboxGLBackground {...props} />
+  ) : (
+    <MapboxStaticBackground {...props} />
   );
 }
 
-// ─── Apple Music card ──────────────────────────────────────────────────────────
+function MapboxGLBackground({ lat, lon, zoom }: MapProps) {
+  const ref = useRef<HTMLDivElement>(null);
 
-function AppleMusicCard({
+  useEffect(() => {
+    if (!ref.current || !MAPBOX_TOKEN) return;
+
+    let map: import("mapbox-gl").Map | null = null;
+    let cancelled = false;
+
+    import("mapbox-gl").then(({ default: mapboxgl }) => {
+      if (cancelled || !ref.current) return;
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      map = new mapboxgl.Map({
+        container: ref.current,
+        style: MAPBOX_GL_STYLE,
+        center: [lon, lat],
+        zoom,
+        interactive: false,
+        attributionControl: false,
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      map?.remove();
+    };
+  }, [lat, lon, zoom]);
+
+  return <div ref={ref} className="absolute inset-0 h-full w-full" />;
+}
+
+function MapboxStaticBackground({ lat, lon, zoom }: MapProps) {
+  const url = `https://api.mapbox.com/styles/v1/${MAPBOX_STATIC_STYLE}/static/${lon},${lat},${zoom},0/600x700@2x?access_token=${MAPBOX_TOKEN}`;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt=""
+      className="absolute inset-0 h-full w-full object-cover"
+    />
+  );
+}
+
+// ─── Music card ──────────────────────────────────────────────────────────
+
+function MusicCard({
   slide,
+  onPlayingChange,
 }: {
-  slide: Extract<StorySlide, { type: "appleMusic" }>;
+  slide: Extract<StorySlide, { type: "music" }>;
+  onPlayingChange?: (playing: boolean) => void;
 }) {
   const [playing, setPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -250,19 +380,28 @@ function AppleMusicCard({
     const audio = new Audio(slide.previewUrl);
     audioRef.current = audio;
     const onTimeUpdate = () => {
+      setAudioProgress(Math.min(audio.currentTime / 15, 1));
       if (audio.currentTime >= 15) {
         audio.pause();
         audio.currentTime = 0;
         setPlaying(false);
+        setAudioProgress(0);
+        onPlayingChange?.(false);
       }
     };
     audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", () => setPlaying(false));
+    audio.addEventListener("ended", () => {
+      setPlaying(false);
+      setAudioProgress(0);
+      onPlayingChange?.(false);
+    });
     return () => {
       audio.pause();
+      setAudioProgress(0);
+      onPlayingChange?.(false);
       audio.removeEventListener("timeupdate", onTimeUpdate);
     };
-  }, [slide.previewUrl]);
+  }, [slide.previewUrl, onPlayingChange]);
 
   const toggle = useCallback(
     (e: React.MouseEvent) => {
@@ -272,13 +411,16 @@ function AppleMusicCard({
       if (playing) {
         audio.pause();
         setPlaying(false);
+        onPlayingChange?.(false);
       } else {
         audio.currentTime = 0;
+        setAudioProgress(0);
         audio.play().catch(() => {});
         setPlaying(true);
+        onPlayingChange?.(true);
       }
     },
-    [playing],
+    [playing, onPlayingChange],
   );
 
   // Fallback when no track data yet
@@ -290,7 +432,7 @@ function AppleMusicCard({
           <>
             <HugeiconsIcon icon={MusicNote01Icon} size={18} strokeWidth={2} />
             <span className="text-xs font-medium uppercase tracking-wide text-white/80">
-              Apple Music
+              Music
             </span>
           </>
         }
@@ -301,17 +443,17 @@ function AppleMusicCard({
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden bg-white/90">
       {/* Blurred album art background */}
       {slide.artworkUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={slide.artworkUrl}
           alt=""
-          className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl"
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-md"
         />
       )}
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-black/40" />
 
       {/* Content */}
       <div className="relative flex h-full flex-col text-white">
@@ -342,15 +484,48 @@ function AppleMusicCard({
             <button
               type="button"
               onClick={toggle}
-              className="mt-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-opacity hover:opacity-80"
+              className="relative mt-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-opacity hover:opacity-80"
             >
+              <svg
+                className="pointer-events-none absolute inset-0 -rotate-90"
+                width="32"
+                height="32"
+                viewBox="0 0 32 32"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="16"
+                  cy="16"
+                  r={14}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.3)"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="16"
+                  cy="16"
+                  r={14}
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 14}
+                  strokeDashoffset={2 * Math.PI * 14 * (1 - audioProgress)}
+                  style={{
+                    transition:
+                      audioProgress > 0
+                        ? "stroke-dashoffset 0.1s linear"
+                        : "none",
+                  }}
+                />
+              </svg>
               {playing ? (
-                <span className="flex gap-[3px]">
+                <span className="relative flex gap-[3px]">
                   <span className="h-3 w-[3px] rounded-sm bg-white" />
                   <span className="h-3 w-[3px] rounded-sm bg-white" />
                 </span>
               ) : (
-                <span className="ml-0.5 h-0 w-0 border-y-[5px] border-l-[9px] border-y-transparent border-l-white" />
+                <span className="relative ml-0.5 h-0 w-0 border-y-[5px] border-l-[9px] border-y-transparent border-l-white" />
               )}
             </button>
           )}
@@ -362,126 +537,445 @@ function AppleMusicCard({
 
 // ─── Slide content dispatcher ──────────────────────────────────────────────────
 
-export function SlideContent({ slide }: { slide: StorySlide }) {
+export function SlideContent({
+  slide,
+  onMusicPlaying,
+}: {
+  slide: StorySlide;
+  onMusicPlaying?: (playing: boolean) => void;
+}) {
   switch (slide.type) {
     case "photo":
       if (!slide.imageUrl)
         return <PlaceholderSlide icon={Image02Icon} label="photo à venir" />;
       return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={slide.imageUrl}
-          alt={slide.alt ?? ""}
-          className="h-full w-full object-cover"
-        />
+        <div className="relative h-full w-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={slide.imageUrl}
+            alt={slide.alt ?? ""}
+            className="h-full w-full object-cover"
+          />
+          {slide.caption && (
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pb-5 pt-10">
+              <p className="text-sm font-medium text-white drop-shadow">
+                {slide.caption}
+              </p>
+            </div>
+          )}
+        </div>
       );
 
     case "video":
       if (!slide.videoUrl)
         return <PlaceholderSlide icon={Video01Icon} label="vidéo à venir" />;
       return (
-        <video
-          src={slide.videoUrl}
-          className="h-full w-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
+        <div className="relative h-full w-full">
+          <video
+            src={slide.videoUrl}
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+          {slide.caption && (
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-4 pb-5 pt-10">
+              <p className="text-sm font-medium text-white drop-shadow">
+                {slide.caption}
+              </p>
+            </div>
+          )}
+        </div>
       );
 
-    case "appleMusic":
-      return <AppleMusicCard slide={slide} />;
+    case "music":
+      return <MusicCard slide={slide} onPlayingChange={onMusicPlaying} />;
 
-    case "appleMaps":
-      return <AppleMapsCard slide={slide} />;
+    case "location":
+      return <LocationCard slide={slide} />;
 
     case "strava": {
       const pace =
-        slide.speedKmh && slide.speedKmh > 0 ? formatPace(slide.speedKmh) : null;
-      const mainStats = [
-        slide.distanceKm != null ? `${slide.distanceKm.toFixed(1)} km` : null,
-        slide.durationMin != null ? `${slide.durationMin} min` : null,
-      ]
-        .filter(Boolean)
-        .join(" · ");
+        slide.speedKmh && slide.speedKmh > 0
+          ? formatPace(slide.speedKmh)
+          : null;
+      const actTypeIcon = getActivityIcon(slide.activityType);
 
       return (
-        <div className="relative flex h-full w-full flex-col bg-stone-700 text-white">
-          {/* Top bar */}
-          <div className="flex items-center gap-1.5 p-4">
-            <HugeiconsIcon icon={WorkoutRunIcon} size={18} strokeWidth={2} />
+        <div
+          className="relative flex h-full w-full flex-col overflow-hidden text-white"
+          style={{
+            background: `
+              radial-gradient(ellipse at 88% 8%, rgba(251,146,60,0.60) 0%, transparent 55%),
+              radial-gradient(ellipse at 12% 92%, rgba(249,115,22,0.34) 0%, transparent 50%),
+              radial-gradient(ellipse at 52% 48%, rgba(254,215,170,0.18) 0%, transparent 48%),
+              linear-gradient(150deg, #c2410c 0%, #ea580c 30%, #9a3412 66%, #5a1e0a 100%)
+            `,
+          }}
+        >
+          {/* Grain overlay for texture */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='0.11'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              mixBlendMode: "overlay",
+            }}
+          />
+
+          {/* Top bar: label only */}
+          <div className="relative flex items-center gap-1.5 p-4">
+            <HugeiconsIcon icon={WorkoutRunIcon} size={16} strokeWidth={2} />
             <span className="text-xs font-medium uppercase tracking-wide text-white/80">
               Activity
             </span>
           </div>
 
           {/* Bottom content */}
-          <div className="mt-auto flex flex-col gap-1.5 p-6">
-            {/* BPM */}
-            {slide.bpm != null && (
-              <div className="mb-1 flex items-center gap-1.5">
-                <HugeiconsIcon icon={Cardiogram01Icon} size={14} strokeWidth={1.5} className="text-white/70" />
-                <span className="text-sm font-semibold tabular-nums">
-                  {slide.bpm}
-                  <span className="ml-0.5 text-xs font-normal text-white/60">bpm</span>
-                </span>
+          <div className="relative mt-auto p-6">
+            <div className="mt-2 flex flex-col gap-4">
+              <div className="flex items-center gap-1.5">
+                <HugeiconsIcon
+                  icon={Route01Icon}
+                  size={15}
+                  strokeWidth={2}
+                  className="text-white/60"
+                />
+                <p className="text-2xl font-bold leading-none">
+                  {slide.distanceKm != null
+                    ? `${slide.distanceKm.toFixed(1)} km`
+                    : "—"}
+                </p>
               </div>
-            )}
+              <div className="flex items-center gap-1.5">
+                <HugeiconsIcon
+                  icon={StopWatchIcon}
+                  size={15}
+                  strokeWidth={2}
+                  className="text-white/60"
+                />
+                <p className="text-2xl font-bold leading-none">
+                  {formatDuration(slide.durationMin)}
+                </p>
+              </div>
+            </div>
 
-            {/* Distance + time | Pace */}
-            {(mainStats || pace) && (
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm text-white/75">{mainStats}</span>
+            {(pace ?? slide.bpm) && (
+              <div className="mt-4 flex gap-4 text-white/60">
                 {pace && (
-                  <span className="text-sm font-bold tabular-nums">
-                    {pace}
-                    <span className="ml-0.5 text-xs font-normal text-white/60">/km</span>
-                  </span>
+                  <div className="flex items-center gap-1 text-[12px]">
+                    <HugeiconsIcon icon={ZapIcon} size={12} strokeWidth={2} />
+                    <span className="font-semibold">{pace}</span>
+                  </div>
+                )}
+                {slide.bpm != null && (
+                  <div className="flex items-center gap-1 text-[12px]">
+                    <HugeiconsIcon
+                      icon={FavouriteIcon}
+                      size={12}
+                      strokeWidth={2}
+                    />
+                    <span className="font-semibold">{slide.bpm}</span>
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Activity title */}
-            <p className="text-xl font-bold leading-tight">
-              {slide.activityName ?? "Latest activity"}
-            </p>
-
-            {/* Date */}
-            {slide.date && (
-              <p className="text-xs text-white/40">{slide.date}</p>
-            )}
+            {/* 3. Activity name + date */}
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="flex items-center gap-1.5">
+                <HugeiconsIcon
+                  icon={actTypeIcon}
+                  size={16}
+                  strokeWidth={2}
+                  className="shrink-0 text-white/60"
+                />
+                <p className="text-md font-bold leading-tight">
+                  {slide.activityName ?? "Latest activity"}
+                </p>
+              </div>
+              {slide.date && (
+                <p className="mt-0.5 text-xs text-white/60">{slide.date}</p>
+              )}
+            </div>
           </div>
         </div>
       );
     }
 
-    case "github":
-      if (!slide.repo)
+    case "github": {
+      if (!slide.repo && !slide.contributions)
         return <PlaceholderSlide icon={GithubIcon} label="GitHub" />;
+
+      // Chunk into columns of 5 weekdays (Mon–Fri, filtered in fetcher)
+      const weeks: Array<Array<{ level: number }>> = [];
+      if (slide.contributions) {
+        for (let i = 0; i < slide.contributions.length; i += 5) {
+          weeks.push(slide.contributions.slice(i, i + 5));
+        }
+      }
+
       return (
-        <CardShell
-          bg="bg-stone-800"
-          top={
-            <>
-              <HugeiconsIcon icon={GithubIcon} size={16} strokeWidth={2} />
-              <span className="text-xs font-medium uppercase tracking-wide text-white/80">Code</span>
-            </>
-          }
-        >
-          {slide.repo && (
-            <div className="mb-2 flex items-center gap-1.5 text-xs text-white/50">
-              <HugeiconsIcon icon={GitCommitIcon} size={13} strokeWidth={2} className="shrink-0" />
-              <span className="truncate">{slide.repo}</span>
+        <div className="relative flex h-full w-full flex-col bg-stone-900 text-white">
+          {/* Top bar */}
+          <div className="flex items-center gap-1.5 px-5 pt-5 pb-2">
+            <HugeiconsIcon icon={GithubIcon} size={16} strokeWidth={2} />
+            <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+              Code
+            </span>
+          </div>
+
+          {/* Spacer pushes commit info down */}
+          <div className="flex-1" />
+
+          {/* Latest commit — in the lower portion of the card */}
+          <div className="px-5 pb-3">
+            {slide.repo && (
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] text-white/40">
+                <HugeiconsIcon
+                  icon={GitCommitIcon}
+                  size={12}
+                  strokeWidth={2}
+                  className="shrink-0"
+                />
+                <span className="truncate">{slide.repo}</span>
+              </div>
+            )}
+            {slide.message && (
+              <p className="line-clamp-2 text-sm font-medium leading-snug">
+                {slide.message}
+              </p>
+            )}
+            {slide.date && (
+              <span className="mt-0.5 block text-[11px] text-white/40">
+                {slide.date}
+              </span>
+            )}
+          </div>
+
+          {/* Contribution calendar — 8 cols × 5 rows, 80% width */}
+          {weeks.length > 0 && (
+            <div className="px-5 pb-5">
+              <div className="flex gap-[4px]" style={{ width: "80%" }}>
+                {weeks.map((week, ci) => (
+                  <div key={ci} className="flex flex-1 flex-col gap-[4px]">
+                    {week.map((day, di) => (
+                      <div
+                        key={di}
+                        className="aspect-square rounded-[3px]"
+                        style={{
+                          backgroundColor: GH_LEVELS[day.level] ?? GH_LEVELS[0],
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          <p className="text-base font-semibold leading-snug">{slide.message}</p>
-          {slide.date && (
-            <span className="mt-1.5 block text-xs text-white/40">
-              {slide.date}
+        </div>
+      );
+    }
+
+    case "valorant":
+      return <ValorantCard slide={slide} />;
+  }
+}
+
+// ─── Valorant card (client-side TRN fetch) ─────────────────────────────────────
+
+type TRNMatchData = {
+  result: "victory" | "defeat";
+  score: string | null;
+  mapName: string | null;
+  mapSplashUrl: string | null;
+  agentName: string | null;
+  agentIconUrl: string | null;
+  kills: number | null;
+  deaths: number | null;
+  assists: number | null;
+  acs: number | null;
+  hsPercent: number | null;
+  rank: string | null;
+  rankIconUrl: string | null;
+  startedAt: string | null;
+};
+
+async function fetchTRNMatch(
+  trackerUrl: string,
+  region: string | null,
+): Promise<TRNMatchData | null> {
+  try {
+    const params = new URLSearchParams({ trackerUrl });
+    if (region) params.set("region", region);
+    const res = await fetch(`/api/valorant?${params.toString()}`);
+    if (!res.ok) return null;
+    return (await res.json()) as TRNMatchData | null;
+  } catch {
+    return null;
+  }
+}
+
+function ValorantCard({
+  slide,
+}: {
+  slide: Extract<StorySlide, { type: "valorant" }>;
+}) {
+  const [data, setData] = useState<TRNMatchData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!slide.trackerUrl) {
+      setLoading(false);
+      return;
+    }
+    fetchTRNMatch(slide.trackerUrl, slide.region)
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, [slide.trackerUrl, slide.region]);
+
+  if (loading) {
+    return (
+      <div
+        className="flex h-full w-full items-center justify-center"
+        style={{ background: "#0d0d0e" }}
+      >
+        <span className="text-[10px] font-black tracking-[0.18em] text-red-400/60">
+          VALORANT
+        </span>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div
+        className="flex h-full w-full flex-col items-center justify-center gap-2"
+        style={{ background: "#0d0d0e" }}
+      >
+        <span className="text-[10px] font-black tracking-[0.18em] text-red-400">
+          VALORANT
+        </span>
+        <span className="text-[10px] text-white/30">No data</span>
+      </div>
+    );
+  }
+
+  const isWin = data.result === "victory";
+  const accent = isWin ? "#4ade80" : "#f87171";
+
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden text-white">
+      {/* Map — full opacity, no dim */}
+      {data.mapSplashUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={data.mapSplashUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
+
+      {/* Win/loss gradient — very pronounced */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-full"
+        style={{
+          background: isWin
+            ? "linear-gradient(to top, rgba(0,60,20,1) 0%, rgba(0,60,20,0.85) 35%, rgba(0,40,15,0.4) 65%, transparent 100%)"
+            : "linear-gradient(to top, rgba(60,0,15,1) 0%, rgba(60,0,15,0.85) 35%, rgba(40,0,10,0.4) 65%, transparent 100%)",
+        }}
+      />
+      {/* Top veil */}
+      <div
+        className="absolute inset-x-0 top-0 h-20"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%)",
+        }}
+      />
+
+      {/* Top bar — same style as other cards */}
+      <div className="relative flex items-center gap-1.5 px-5 pt-5 pb-2">
+        <HugeiconsIcon icon={GameController03Icon} size={16} strokeWidth={2} />
+        <span className="text-xs font-medium uppercase tracking-wide text-white/80">
+          Valorant
+        </span>
+      </div>
+
+      {/* Result + map name + score */}
+      <div className="relative mt-auto px-5 pb-2">
+        {data.mapName && (
+          <span className="mb-1 block text-[9px] font-bold tracking-[0.2em] uppercase text-white/40">
+            {data.mapName}
+          </span>
+        )}
+        <div className="mt-1 flex items-center gap-2">
+          <span
+            className="block text-2xl font-black leading-none tracking-tight"
+            style={{ color: accent }}
+          >
+            {isWin ? "VICTORY" : "DEFEAT"}
+          </span>
+          {data.score && (
+            <span className="text-2xl font-bold text-white/80">
+              {data.score.replace("-", " - ")}
             </span>
           )}
-        </CardShell>
-      );
-  }
+        </div>
+
+        {data.startedAt && (
+          <span className="text-sm font-semibold text-white/60">
+            {new Date(data.startedAt).toLocaleDateString("fr-FR", {
+              hour: "numeric",
+              day: "numeric",
+              month: "short",
+            })}
+          </span>
+        )}
+      </div>
+
+      {/* Stats row: agent icon + KDA · ACS · HS% aligned left */}
+      <div className="relative mx-5 flex items-center gap-4 border-t border-white/[0.07] py-3">
+        {data.agentIconUrl && (
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-white/20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.agentIconUrl}
+              alt={data.agentName ?? ""}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
+        <div className="flex gap-4">
+          {data.kills != null &&
+            data.deaths != null &&
+            data.assists != null && (
+              <div>
+                <span className="text-lg font-bold leading-none text-white">
+                  {data.kills}/{data.deaths}/{data.assists}
+                </span>
+                <span className="block text-[9px] text-white/40">K/D/A</span>
+              </div>
+            )}
+          {data.acs != null && (
+            <div>
+              <span className="text-lg font-bold leading-none text-white">
+                {data.acs}
+              </span>
+              <span className="block text-[9px] text-white/40">ACS</span>
+            </div>
+          )}
+          {data.hsPercent != null && (
+            <div>
+              <span className="text-lg font-bold leading-none text-white">
+                {data.hsPercent}%
+              </span>
+              <span className="block text-[9px] text-white/40">HS</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

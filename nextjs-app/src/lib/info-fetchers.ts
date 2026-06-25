@@ -11,7 +11,11 @@ type StatsHuntersActivity = {
   date: string;
 };
 
-export async function getStravaActivity(shareHash: string | null) {
+export async function getStravaActivity(shareUrl: string | null) {
+  if (!shareUrl) return null;
+  // Accept a full StatsHunters share link and extract the hash
+  const match = shareUrl.match(/share\/([a-zA-Z0-9]+)/);
+  const shareHash = match?.[1] ?? null;
   if (!shareHash) return null;
   try {
     const sessionRes = await fetch(
@@ -58,7 +62,8 @@ export async function getStravaActivity(shareHash: string | null) {
       durationMin: Math.round(latest.moving_time / 60),
       bpm: latest.average_heartrate > 0 ? Math.round(latest.average_heartrate) : null,
       elevationM: Math.round(latest.total_elevation_gain),
-      date: latest.date.split(" ")[0],
+      // Full datetime (StatsHunters returns "YYYY-MM-DD HH:MM:SS")
+      date: latest.date.replace(" ", "T"),
     };
   } catch {
     return null;
@@ -82,6 +87,8 @@ type GitHubCommit = {
 type NominatimResult = {
   lat: string;
   lon: string;
+  // [south, north, west, east] as strings
+  boundingbox?: string[];
   address?: {
     city?: string;
     town?: string;
@@ -95,7 +102,6 @@ type ForecastResult = {
   current?: { temperature_2m?: number; weather_code?: number };
   timezone?: string;
 };
-
 
 export async function getLatestCommit(username: string | null) {
   if (!username) return null;
@@ -136,6 +142,25 @@ export async function getLatestCommit(username: string | null) {
   }
 }
 
+// Story card viewport (px), aspect-[6/7] — used to frame the city
+const MAP_CARD_W = 256;
+const MAP_CARD_H = 299;
+
+// Smallest integer zoom that fits a lat/lon bounding box inside the card
+function fitZoom(south: number, north: number, west: number, east: number) {
+  const padW = MAP_CARD_W * 0.9;
+  const padH = MAP_CARD_H * 0.9;
+  const merc = (deg: number) => {
+    const r = (deg * Math.PI) / 180;
+    return Math.log(Math.tan(r) + 1 / Math.cos(r));
+  };
+  const lonSpan = Math.max(Math.abs(east - west), 0.004);
+  const latSpan = Math.max(Math.abs(merc(north) - merc(south)), 0.0004);
+  const zoomLon = Math.log2((padW * 360) / (256 * lonSpan));
+  const zoomLat = Math.log2((padH * 2 * Math.PI) / (256 * latSpan));
+  return Math.max(10, Math.min(15, Math.min(zoomLon, zoomLat)));
+}
+
 export async function getMapData(address: string | null) {
   if (!address) return null;
   try {
@@ -161,6 +186,11 @@ export async function getMapData(address: string | null) {
       null;
     const country = place.address?.country ?? null;
 
+    // Street-level view centred on the address.
+    const centerLat = latitude;
+    const centerLon = longitude;
+    const zoom = 14;
+
     let temperature: number | null = null;
     let weatherCode: number | null = null;
     let timezone: string | null = null;
@@ -182,10 +212,46 @@ export async function getMapData(address: string | null) {
     return {
       lat: latitude,
       lon: longitude,
+      centerLat,
+      centerLon,
+      zoom,
       label: city && country ? `${city}, ${country}` : country ?? null,
       timezone,
       temperature,
       weatherCode,
+    };
+  } catch {
+    return null;
+  }
+}
+
+type ContributionDay = { date: string; count: number; level: number };
+
+export async function getGitHubContributions(username: string | null) {
+  if (!username) return null;
+  try {
+    const res = await fetch(
+      `https://github-contributions-api.jogruber.de/v4/${username}?y=last`,
+      { next: { revalidate: 3600 } },
+    );
+    if (!res.ok) return null;
+    const data: {
+      total?: Record<string, number>;
+      contributions?: ContributionDay[];
+    } = await res.json();
+    const all = data.contributions ?? [];
+    if (all.length === 0) return null;
+    // Keep the most recent 8 weeks of weekdays only (Mon–Fri)
+    const WEEKS = 8;
+    const weekdays = all.filter((d) => {
+      const day = new Date(d.date + "T00:00:00").getDay();
+      return day >= 1 && day <= 5;
+    });
+    const recent = weekdays.slice(-WEEKS * 5);
+    const total = recent.reduce((sum, d) => sum + d.count, 0);
+    return {
+      days: recent.map((d) => ({ level: d.level })),
+      total,
     };
   } catch {
     return null;

@@ -1,5 +1,5 @@
 import { ViewTransition } from "react";
-import { formatMonth } from "@/lib/date-utils";
+import { formatDateTime } from "@/lib/date-utils";
 import { client } from "@/sanity/client";
 import {
   profileQuery,
@@ -16,6 +16,7 @@ import {
 import {
   getAppleMusicData,
   getLatestCommit,
+  getGitHubContributions,
   getMapData,
   getStravaActivity,
 } from "@/lib/info-fetchers";
@@ -65,7 +66,7 @@ export default async function InfoPage() {
           case "storyAppleMusic": {
             const music = await getAppleMusicData(story.url);
             return {
-              type: "appleMusic",
+              type: "music",
               url: story.url,
               artworkUrl: music?.artworkUrl ?? null,
               trackName: music?.trackName ?? null,
@@ -74,10 +75,9 @@ export default async function InfoPage() {
             };
           }
           case "storyStrava": {
-            const activity = await getStravaActivity(story.shareHash);
+            const activity = await getStravaActivity(story.shareUrl);
             return {
               type: "strava",
-              profileUrl: story.profileUrl,
               activityName: activity?.activityName ?? null,
               activityType: activity?.activityType ?? null,
               speedKmh: activity?.speedKmh ?? null,
@@ -85,33 +85,47 @@ export default async function InfoPage() {
               durationMin: activity?.durationMin ?? null,
               bpm: activity?.bpm ?? null,
               elevationM: activity?.elevationM ?? null,
-              date: activity?.date ? formatMonth(activity.date) : null,
+              date: activity?.date ? formatDateTime(activity.date) : null,
             };
           }
           case "storyAppleMaps": {
             const map = await getMapData(story.address);
             return {
-              type: "appleMaps",
+              type: "location",
               label: story.label ?? map?.label ?? story.address ?? null,
               timezone: map?.timezone ?? null,
               temperature: map?.temperature ?? null,
               weatherCode: map?.weatherCode ?? null,
               lat: map?.lat ?? null,
               lon: map?.lon ?? null,
+              centerLat: map?.centerLat ?? null,
+              centerLon: map?.centerLon ?? null,
+              zoom: map?.zoom ?? null,
             };
           }
           case "storyGithub": {
-            const commit = await getLatestCommit(story.username);
+            const [commit, contributions] = await Promise.all([
+              getLatestCommit(story.username),
+              getGitHubContributions(story.username),
+            ]);
             return {
               type: "github",
               repo: commit?.repo ?? null,
               message: commit?.message ?? null,
               date: commit?.date ?? null,
+              contributions: contributions?.days ?? null,
+              totalContributions: contributions?.total ?? null,
               url: story.username
                 ? `https://github.com/${story.username}`
                 : null,
             };
           }
+          case "storyValorant":
+            return {
+              type: "valorant",
+              trackerUrl: story.trackerUrl,
+              region: story.region,
+            };
           default:
             return null;
         }
@@ -187,8 +201,8 @@ export default async function InfoPage() {
 
             {/* Experience */}
             {experiences.length > 0 && (
-              <section className="mt-20">
-                <h4 className="mb-4">Experience</h4>
+              <section className="mt-20 mx-2">
+                <h4 className="mb-8">Experience</h4>
                 <div className="flex flex-col gap-10">
                   {experiences.map((exp) => (
                     <TimelineRow
@@ -196,9 +210,9 @@ export default async function InfoPage() {
                       orgName={exp.organisation?.name ?? null}
                       logoUrl={exp.organisation?.logoUrl ?? null}
                       title={exp.title}
+                      contractType={exp.contractType?.name ?? null}
                       startDate={exp.startDate}
                       endDate={exp.endDate}
-                      description={exp.description}
                       ongoingFallback
                     />
                   ))}
@@ -208,8 +222,8 @@ export default async function InfoPage() {
 
             {/* Education */}
             {education.length > 0 && (
-              <section className="mt-20">
-                <h4 className="mb-4">Education</h4>
+              <section className="mt-20 mx-2">
+                <h4 className="mb-8">Education</h4>
                 <div className="flex flex-col gap-10">
                   {education.map((edu) => (
                     <TimelineRow
@@ -219,7 +233,6 @@ export default async function InfoPage() {
                       title={edu.title}
                       startDate={edu.startDate}
                       endDate={edu.endDate}
-                      description={edu.description}
                     />
                   ))}
                 </div>
@@ -228,8 +241,8 @@ export default async function InfoPage() {
 
             {/* Volunteer */}
             {volunteering.length > 0 && (
-              <section className="mt-20">
-                <h4 className="mb-4">Volunteer</h4>
+              <section className="mt-20 mx-2">
+                <h4 className="mb-8">Volunteer</h4>
                 <div className="flex flex-col gap-10">
                   {volunteering.map((vol) => (
                     <TimelineRow
@@ -239,7 +252,6 @@ export default async function InfoPage() {
                       title={vol.title}
                       startDate={vol.startDate}
                       endDate={vol.endDate}
-                      description={vol.description}
                       ongoingFallback
                     />
                   ))}
@@ -249,7 +261,7 @@ export default async function InfoPage() {
 
             {/* Awards */}
             {awards.length > 0 && (
-              <section className="mt-20">
+              <section className="mt-20 mx-2">
                 <h4 className="mb-4">Awards</h4>
                 <div className="flex flex-col gap-10">
                   {awards.map((award) => (
@@ -260,7 +272,6 @@ export default async function InfoPage() {
                       title={award.organisation?.name ?? ""}
                       startDate={award.date}
                       endDate={null}
-                      description={award.description}
                     />
                   ))}
                 </div>
