@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { EASE_IN_OUT } from "@/lib/easings";
+import { EASE_IN, EASE_OUT, EASE_PUNCH } from "@/lib/easings";
 import { SlideContent, type StorySlide } from "./StoryCard";
 
 export type { StorySlide };
@@ -10,30 +10,24 @@ export type { StorySlide };
 const STORY_DURATION = 12; // seconds
 const TICK_MS = 100;
 
-const POS_FRONT = { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1, zIndex: 20 };
-const POS_BACK = {
-  x: 30,
-  y: -12,
-  scale: 0.92,
-  rotate: 3,
-  opacity: 1,
-  zIndex: 10,
-};
-const POS_EXIT = {
-  x: -20,
-  y: 4,
-  scale: 0.88,
-  rotate: 0,
-  opacity: 0,
-  zIndex: 5,
-};
-const POS_ENTER = {
-  x: 56,
-  y: -12,
-  scale: 0.85,
-  rotate: 4,
-  opacity: 0,
-  zIndex: 10,
+const POS_BACK = { x: 30, y: -12, scale: 0.92, rotate: 3, opacity: 1 };
+
+// Per-variant transitions: spring enter (bouncy), fast ease exit
+const FRONT_VARIANTS = {
+  back: { ...POS_BACK, zIndex: 10 },
+  front: {
+    x: 0, y: 0, scale: 1, rotate: 0, opacity: 1, zIndex: 20,
+    transition: {
+      type: "spring" as const,
+      stiffness: 280,
+      damping: 20,
+      opacity: { duration: 0.18, ease: EASE_OUT },
+    },
+  },
+  gone: {
+    x: -20, y: 4, scale: 0.88, rotate: 0, opacity: 0, zIndex: 5,
+    transition: { duration: 0.25, ease: EASE_IN },
+  },
 };
 
 function CountdownRing({ progress }: { progress: number }) {
@@ -125,14 +119,14 @@ export function StoryStack({ slides }: { slides: StorySlide[] }) {
       <motion.div
         initial={false}
         animate={POS_BACK}
-        transition={{ duration: 0.55, ease: EASE_IN_OUT }}
+        transition={{ duration: 0.38, ease: EASE_PUNCH }}
         className="absolute inset-0 overflow-hidden rounded-3xl shadow-md"
         style={{ zIndex: 10 }}
       >
         <SlideContent slide={slides[(step + 1) % total]} />
       </motion.div>
 
-      {/* Front — enters from POS_BACK, exits to POS_EXIT */}
+      {/* Front — spring enter (bouncy settle), fast exit */}
       <AnimatePresence initial={false}>
         <motion.div
           key={step}
@@ -146,10 +140,10 @@ export function StoryStack({ slides }: { slides: StorySlide[] }) {
               advance();
             }
           }}
-          initial={{ ...POS_BACK, zIndex: 10 }}
-          animate={{ ...POS_FRONT, zIndex: 20 }}
-          exit={{ ...POS_EXIT, zIndex: 5 }}
-          transition={{ duration: 0.55, ease: EASE_IN_OUT }}
+          variants={FRONT_VARIANTS}
+          initial="back"
+          animate="front"
+          exit="gone"
           className="absolute inset-0 cursor-pointer overflow-hidden rounded-3xl shadow-md outline-none"
         >
           <SlideContent
