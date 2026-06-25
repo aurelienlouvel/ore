@@ -76,13 +76,8 @@ export type StorySlide =
       timezone: string | null;
       temperature: number | null;
       weatherCode: number | null;
-      // Marker — exact address
       lat: number | null;
       lon: number | null;
-      // Map frame — whole city
-      centerLat: number | null;
-      centerLon: number | null;
-      zoom: number | null;
     }
   | {
       type: "valorant";
@@ -102,7 +97,6 @@ const GH_LEVELS = [
 // ─── Map tile helpers ──────────────────────────────────────────────────────────
 
 const MAP_TILE = 256;
-// Static Paris map — matches the apple-maps screenshot in /public/paris-map.jpg
 const PARIS_MAP_LAT = 48.857;
 const PARIS_MAP_LON = 2.347;
 const PARIS_MAP_ZOOM = 11;
@@ -716,9 +710,9 @@ export function SlideContent({
   }
 }
 
-// ─── Valorant card (client-side TRN fetch) ─────────────────────────────────────
+// ─── Valorant card ────────────────────────────────────────────────────────────
 
-type TRNMatchData = {
+type MatchData = {
   result: "victory" | "defeat";
   score: string | null;
   mapName: string | null;
@@ -735,16 +729,16 @@ type TRNMatchData = {
   startedAt: string | null;
 };
 
-async function fetchTRNMatch(
+async function fetchValorantMatch(
   trackerUrl: string,
   region: string | null,
-): Promise<TRNMatchData | null> {
+): Promise<MatchData | null> {
   try {
     const params = new URLSearchParams({ trackerUrl });
     if (region) params.set("region", region);
     const res = await fetch(`/api/valorant?${params.toString()}`);
     if (!res.ok) return null;
-    return (await res.json()) as TRNMatchData | null;
+    return (await res.json()) as MatchData | null;
   } catch {
     return null;
   }
@@ -755,7 +749,7 @@ function ValorantCard({
 }: {
   slide: Extract<StorySlide, { type: "valorant" }>;
 }) {
-  const [data, setData] = useState<TRNMatchData | null>(null);
+  const [data, setData] = useState<MatchData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -763,7 +757,7 @@ function ValorantCard({
       setLoading(false);
       return;
     }
-    fetchTRNMatch(slide.trackerUrl, slide.region)
+    fetchValorantMatch(slide.trackerUrl, slide.region)
       .then(setData)
       .finally(() => setLoading(false));
   }, [slide.trackerUrl, slide.region]);

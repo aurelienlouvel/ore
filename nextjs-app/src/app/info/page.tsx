@@ -98,9 +98,6 @@ export default async function InfoPage() {
               weatherCode: map?.weatherCode ?? null,
               lat: map?.lat ?? null,
               lon: map?.lon ?? null,
-              centerLat: map?.centerLat ?? null,
-              centerLon: map?.centerLon ?? null,
-              zoom: map?.zoom ?? null,
             };
           }
           case "storyGithub": {

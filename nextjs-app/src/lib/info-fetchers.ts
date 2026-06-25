@@ -168,10 +168,6 @@ export async function getMapData(address: string | null) {
     const country = place.address?.country ?? null;
 
     // Map now uses a static image — keep these for backwards compat with the type.
-    const centerLat = latitude;
-    const centerLon = longitude;
-    const zoom = 11;
-
     let temperature: number | null = null;
     let weatherCode: number | null = null;
     let timezone: string | null = null;
@@ -193,9 +189,6 @@ export async function getMapData(address: string | null) {
     return {
       lat: latitude,
       lon: longitude,
-      centerLat,
-      centerLon,
-      zoom,
       label: city && country ? `${city}, ${country}` : country ?? null,
       timezone,
       temperature,
