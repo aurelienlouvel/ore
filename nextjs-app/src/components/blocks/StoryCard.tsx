@@ -305,7 +305,7 @@ function MusicCard({
   useEffect(() => {
     if (!slide.previewUrl) return;
     const audio = new Audio(slide.previewUrl);
-    audio.volume = 0.35;
+    audio.volume = 0.08;
     audioRef.current = audio;
     const onTimeUpdate = () => {
       setAudioProgress(Math.min(audio.currentTime / 15, 1));
@@ -341,6 +341,7 @@ function MusicCard({
         setPlaying(false);
         onPlayingChange?.(false);
       } else {
+        audio.volume = 0.08; // re-apply each play so HMR / stale instances stay correct
         audio.currentTime = 0;
         setAudioProgress(0);
         audio.play().catch(() => {});
