@@ -14,6 +14,7 @@ import { useActionBar } from "@/contexts/ActionBarContext";
 import { markWorkReturn } from "@/lib/scroll";
 import { cn } from "@/lib/utils";
 import { ScrambleText } from "@/components/primitives/ScrambleText";
+import { isLandingPath } from "@/lib/landing";
 
 const NAV_LINKS = [
   { href: "/work", label: "work", scramble: false },
@@ -118,6 +119,13 @@ function NavLink({
 }
 
 export function ActionBar() {
+  const pathname = usePathname();
+  // La landing de prod (page Notion plein écran) n'a pas de nav.
+  if (isLandingPath(pathname)) return null;
+  return <ActionBarContent />;
+}
+
+function ActionBarContent() {
   const pathname = usePathname();
   const router = useRouter();
   const { mode, projectData } = useActionBar();
